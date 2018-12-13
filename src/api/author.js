@@ -1,10 +1,10 @@
 import api from '@/api'
 // 操作类
 export const addAuthor =  async function (params) {
-  await api.post('/author/add', params)
+  return (await api.post('/author/add', params)).data
 }
 export const updateAuthor = async function (params) {
-  await api.post('/author/update', params)
+  return (await api.post('/author/update', params)).data
 }
 // 查询类
 export const getAuthor = async function (params) {

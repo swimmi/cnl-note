@@ -33,6 +33,11 @@ var simple = {
   relate: '相关',
   mode: '模式',
   background: '背景',
+  book_title: '书名',
+  book_category: '书类',
+  prologue: '序跋',
+  alias: '别名',
+  catalog: '目录',
   // 动词
   add: '添加',
   back: '返回',
@@ -51,6 +56,11 @@ var simple = {
   lock: '锁定',
   unlock: '解锁',
   change: '更换',
+  add_all: '著作',
+  add_author: '集贤',
+  add_piece: '收篇',
+  add_book: '存书',
+  collect_book: '编撰',
   // 提示
   no: '不',
   yes: '是',

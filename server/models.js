@@ -45,9 +45,25 @@ const authorSchema = Schema({
   hidden: { type: Boolean, default: false }
 }, {collection: 'authors', timestamps: true})
 
+// 书籍
+const bookSchema = Schema({
+  title: String,
+  alias: String,
+  category: Number,
+  author: { type: ObjectId, ref: 'Author' },
+  dynasty: Number,
+  tags: [String],
+  prologue: String,
+  introduce: String,
+  catalog: [],
+  hidden: { type: Boolean, default: false },
+  lastViewAt: Date
+}, {collection: 'books', timestamps: true})
+
 const models = {
   Piece: mongoose.model('Piece', pieceSchema),
-  Author: mongoose.model('Author', authorSchema)
+  Author: mongoose.model('Author', authorSchema),
+  Book: mongoose.model('Book', bookSchema)
 }
 
 module.exports = models

@@ -1,13 +1,14 @@
 <template>
-  <Form :model="newBook" :label-width="40" ref="newBook" class="drawer-form">
-    <FormItem label="书名">
-      <Input v-model="newBook.title" placeholder="请输入"></Input>
+  <Spin v-if="loading" class="center-parent"></Spin>
+  <Form v-else :model="book" :rules="bookValidate" :label-width="60" ref="book" class="drawer-form">
+    <FormItem :label="$str.book_title" prop="title">
+      <Input v-model="book.title" :placeholder="$str.input_tip"></Input>
     </FormItem>
-    <FormItem label="别名">
-      <Input v-model="newBook.alias" placeholder="请输入"></Input>
+    <FormItem :label="$str.alias" prop="alias">
+      <Input v-model="book.alias" :placeholder="$str.input_tip"></Input>
     </FormItem>
-    <FormItem label="书类">
-      <Select v-model="newBook.category" filterable>
+    <FormItem :label="$str.book_category" prop="category">
+      <Select v-model="book.category" filterable>
         <OptionGroup
           v-for="(item, index) in categoryList"
           :key="index"
@@ -19,9 +20,9 @@
         </OptionGroup>
       </Select>
     </FormItem>
-    <FormItem :label="$str.author">
+    <FormItem :label="$str.author" prop="author">
       <Select
-        v-model="newBook.author"
+        v-model="book.author"
         filterable
         remote
         :remote-method="queryAuthors"
@@ -29,48 +30,60 @@
         <Option v-for="(item, index) in authorList" :value="item.value" :key="index">{{ item.label }}</Option>
       </Select>
     </FormItem>
-    <FormItem label="朝代">
-      <Select v-model="newBook.dynasty">
+    <FormItem :label="$str.dynasty" prop="dynasty">
+      <Select v-model="book.dynasty">
         <Option
           v-for="(item, index) in dynastyList"
           :value="item.id"
           :key="index">{{ item.title }}</Option>
       </Select>
     </FormItem>
-    <FormItem label="标签">
-      <Input v-model="tagText" placeholder="请输入" style="width: 120px" />
+    <FormItem :label="$str.tag" prop="tag">
+      <Input v-model="tagText" :placeholder="$str.input_tip" style="width: 120px" />
       <Button icon="ios-add" type="dashed" @click="handleAdd"></Button><Br />
-      <Tag v-for="item in newBook.tags" :key="item" :name="item" closable @on-close="handleClose">{{ item }}</Tag>
+      <Tag v-for="item in book.tags" :key="item" :name="item" closable @on-close="handleClose">{{ item }}</Tag>
     </FormItem>
-    <FormItem label="简介">
-        <Input v-model="newBook.introduce" type="textarea" :autosize="{minRows: 5,maxRows: 8}" placeholder="请输入"></Input>
+    <FormItem :label="$str.prologue" prop="prologue">
+        <Input v-model="book.prologue" type="textarea" :autosize="{minRows: 5,maxRows: 8}" :placeholder="$str.input_tip"></Input>
+    </FormItem>
+    <FormItem :label="$str.introduce" prop="introduce">
+        <Input v-model="book.introduce" type="textarea" :autosize="{minRows: 5,maxRows: 8}" :placeholder="$str.input_tip"></Input>
     </FormItem>
     <FormItem>
-        <Button type="primary" @click="submit">提交</Button>
-        <Button style="margin-left: 8px" @click="$bus.emit('back')">取消</Button>
+        <Button type="primary" @click="submit">{{ $str.submit }}</Button>
+        <Button style="margin-left: 8px" @click="$bus.emit('back')">{{ $str.back }}</Button>
     </FormItem>
   </Form>
 </template>
 <script>
 import data from '@/store/data.js'
+import { addBook } from '@/api/book'
+import { allAuthor } from '@/api/author'
 export default {
   data () {
     return {
-      newBook: {
+      book: {
         title: '',
         alias: '',
         category: 0,
         author: 0,
         dynasty: 0,
         tags: [],
+        prologue: '',
         introduce: ''
       },
+      bookValidate: {
+        title: [{ required: true, message: this.$str.need_input, trigger: 'blur' }],
+        category: [{ required: true, type: 'number', message: this.$str.need_select, trigger: 'change' }],
+        author: [{ required: true, message: this.$str.need_select, trigger: 'change' }]
+      },
       tagText: '',
-      categoryList: [],
-      dynastyList: [],
+      categoryList: data.category,
+      dynastyList: data.dynasty,
       loadingAuthor: false,
       allAuthors: [],
-      authorList: []
+      authorList: [],
+      loading: true
     }
   },
   mounted () {
@@ -78,22 +91,26 @@ export default {
   },
   methods: {
     init () {
-      this.categoryList = data.category
-      this.dynastyList = data.dynasty
-      this.getAuthors()
+      // 获取作者列表以供选择
+      allAuthor().then(res => {
+        this.allAuthors = res.map(item =>  {
+          return {
+            value: item._id,
+            label: item.name.full
+          }
+        })
+        this.loading = false
+      })
     },
     handleAdd () {
       if (this.tagText.trim().length) {
-        this.newBook.tags.push(this.tagText)
+        this.book.tags.push(this.tagText)
         this.tagText = ''
       }
     },
-    handleReset (name) {
-      this.$refs[name].resetFields()
-    },
     handleClose (event, name) {
-      const index = this.newBook.tags.indexOf(name)
-      this.newBook.tags.splice(index, 1)
+      const index = this.book.tags.indexOf(name)
+      this.book.tags.splice(index, 1)
     },
     queryAuthors (query) {
       if (query !== '') {
@@ -106,33 +123,16 @@ export default {
         this.authorList = []
       }
     },
-    getAuthors () {
-      this.$http.get('/api/allAuthors')
-        .then(response => {
-          for (let i = 0; i < response.data.length; i++) {
-            let item = response.data[i]
-            this.allAuthors.push({value: item.id, label: item.xing + item.ming + ' ' + item.xing + item.zi + ' ' + item.hao})
-          }
-        })
-        .catch(function (error) {
-          console.log(error)
-        })
-    },
     submit () {
-      this.newBook.tags = this.newBook.tags.join(',')
-      this.$http.post('/api/addBook', {
-        book: this.newBook
+      this.$refs['book'].validate((valid) => {
+        if (valid) {
+          addBook({book: this.book}).then(res => {
+            console.log(res)
+            this.$bus.emit('back')
+          })
+          this.$Message.success(this.$str.submit)
+        }
       })
-        .then(response => {
-          console.log(response)
-          this.handleReset('newBook')
-          this.$Message.success('添加成功')
-          this.$bus.emit('back')
-        })
-        .catch(error => {
-          console.log(error)
-          this.$Message.success('添加失败')
-        })
     }
   }
 }

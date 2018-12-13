@@ -1,10 +1,10 @@
 <template>
   <div class="search-result">
     <Scroll class="result-scroll" :height="scrollHeight">
-      <Divider>{{ list.title }}</Divider>
       <piece-item
         v-for="(item, index) in list.data"
         :key="index"
+        :type="list.type"
         :piece="item"
         class="animated bounceInLeft"></piece-item>
     </Scroll>
@@ -25,12 +25,11 @@ export default {
   },
   data () {
     return {
-      scrollHeight: 800,
-      loading: false
+      scrollHeight: 800
     }
   },
   mounted () {
-    this.scrollHeight = document.documentElement.clientHeight;
+    this.scrollHeight = document.documentElement.clientHeight
   }
 }
 </script>

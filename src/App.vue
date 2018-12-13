@@ -1,6 +1,6 @@
 <template>
   <div id="app" :style="{backgroundImage: 'url(static/images/bg/'+ theme + '.jpg)'}">
-    <router-view v-if="isRouterAlive" class="animated fadeIn" :piece="random.piece"/>
+    <router-view v-if="isRouterAlive" :piece="random.piece"/>
     <router-view v-else name="locker" :random="random"/>
     <Icon
       class="change-btn"

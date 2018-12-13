@@ -1,23 +1,23 @@
 <template>
 <div class="layout">
   <Layout v-if="!isReadMode" class="layout-main-mode">
-    <Sider class="sider" width="200">
-      <Menu width="auto" active-name="recent_view" accordion class="menu" @on-select="action">
+    <Sider class="sider" width="300">
+      <Menu width="auto" active-name="recent_read" :open-names="['recent']" accordion class="menu" @on-select="action">
         <Submenu name="recent">
             <template slot="title">
               {{ $str.recent }}
             </template>
-            <MenuItem name="recent_view"><span>{{ $str.view }}</span></MenuItem>
+            <MenuItem name="recent_read"><span>{{ $str.read }}</span></MenuItem>
             <MenuItem name="recent_add"><span>{{ $str.add }}</span></MenuItem>
         </Submenu>
         <Submenu name="add">
             <template slot="title">
-              {{ $str.add }}
+              {{ $str.add_all }}
             </template>
-            <MenuItem name="add_author_drawer"><span>{{ $str.author }}</span></MenuItem>
-            <MenuItem name="add_piece_drawer"><span>{{ $str.piece }}</span></MenuItem>
-            <MenuItem name="add_book_drawer"><span>{{ $str.book }}</span></MenuItem>
-            <MenuItem name="add_series_drawer"><span>{{ $str.series }}</span></MenuItem>
+            <MenuItem name="add_author_drawer"><span>{{ $str.add_author }}</span></MenuItem>
+            <MenuItem name="add_piece_drawer"><span>{{ $str.add_piece }}</span></MenuItem>
+            <MenuItem name="add_book_drawer"><span>{{ $str.add_book }}</span></MenuItem>
+            <MenuItem name="collect_book_drawer"><span>{{ $str.collect_book }}</span></MenuItem>
         </Submenu>
         <Submenu name="search">
             <template slot="title">
@@ -27,13 +27,13 @@
             <MenuItem name="search_book_drawer"><span>{{ $str.book }}</span></MenuItem>
             <MenuItem name="search_author_drawer"><span>{{ $str.author }}</span></MenuItem>
         </Submenu>
-        <dash-board class="dash-board"></dash-board>
+        <dash-board class="dashboard"></dash-board>
       </Menu>
     </Sider>
     <Content class="content">
       <Row>
-        <Col span="8" class="content-left animated bounceInLeft">
-          <piece-list :list="resultList"></piece-list>
+        <Col span="8" class="content-left">
+          <piece-list v-if="resultList != null" :list="resultList"></piece-list>
         </Col>
         <Col span="16" class="content-right">
           <Spin size="large" class="center-parent" v-if="loadingPiece"></Spin>
@@ -77,14 +77,13 @@
       </book-item>
     </Sider>
     <Drawer ref="drawer" placement="left" :closable="false" v-model="showDrawer" :width="drawerWidth" @on-close="back" class="drawer">
-      <h3 slot="header" class="center-title">{{ drawerTitle }}</h3>
-      <section v-if="actionName === 'add_author'"><add-author></add-author></section>
-      <section v-else-if="actionName === 'add_book'"><add-book></add-book></section>
-      <section v-else-if="actionName === 'add_series'"><add-series></add-series></section>
-      <section v-else-if="actionName === 'add_piece' || actionName === 'modify_piece'"><piece-add :id="actionName === 'modify_piece' ? pieceToDo : ''"></piece-add></section>
-      <section v-else-if="actionName === 'edit_piece'"><piece-edit :id="pieceToDo"></piece-edit></section>
+      <section v-if="actionName === 'add_author_drawer'"><add-author></add-author></section>
+      <section v-else-if="actionName === 'add_book_drawer'"><add-book></add-book></section>
+      <section v-else-if="actionName === 'collect_book_drawer'"><collect-book></collect-book></section>
+      <section v-else-if="actionName === 'add_piece_drawer' || actionName === 'modify_piece'"><piece-add :id="actionName === 'modify_piece' ? pieceToDo : ''"></piece-add></section>
+      <section v-else-if="actionName === 'edit_piece_drawer'"><piece-edit :id="pieceToDo"></piece-edit></section>
       <section v-else-if="actionName === 'relate_piece'"><piece-relate :id="pieceToDo"></piece-relate></section>
-      <section v-else-if="actionName === 'search_piece'"><piece-search @result="returnResult"></piece-search></section>
+      <section v-else-if="actionName === 'search_piece_drawer'"><piece-search @result="returnResult"></piece-search></section>
     </Drawer>
   </Layout>
   <div v-else class="layout-read-mode animated zoomInUp">
@@ -95,8 +94,7 @@
 <script>
 import AddAuthor from '@/components/pages/author/add'
 import AddBook from '@/components/pages/book/add'
-import AddSeries from '@/components/pages/series/add'
-import IndexCategory from '@/components/pages/category'
+import CollectBook from '@/components/pages/book/collect'
 // 篇章操作相关组件
 import PieceAdd from '@/components/pages/piece/add'
 import PieceEdit from '@/components/pages/piece/edit'
@@ -104,6 +102,7 @@ import PieceSearch from '@/components/pages/piece/search'
 import PieceRelate from '@/components/pages/piece/relate'
 import PieceView from '@/components/pages/piece/view'
 
+import IndexCategory from '@/components/pages/category'
 import PieceList from '@/components/widgets/list/piece'
 import BookItem from '@/components/widgets/item/book'
 import DashBoard from '@/components/widgets/DashBoard'
@@ -113,7 +112,7 @@ export default {
   components: {
     AddBook,                // 添加书籍
     AddAuthor,              // 添加作者
-    AddSeries,              // 添加卷册
+    CollectBook,            // 编撰书籍
     IndexCategory,          // 目录索引
     PieceList,              // 搜索结果
     PieceAdd,               // 添加篇章
@@ -139,7 +138,6 @@ export default {
       resultName: '',       // 显示结果类型名称
       resultList: null,       // 显示结果列表
       showDrawer: false,    // 是否显示drawer
-      drawerTitle: '',      // drawer的标题
       showIndex: true,      // 是否显示分类索引
       showCategory: false,  // 是否显示右侧目录索引
       showBooks: false,     // 是否现在右侧书籍列表
@@ -161,7 +159,7 @@ export default {
   },
   computed: {
     drawerWidth: function() {
-      if (['add_piece', 'edit_piece', 'relate_piece'].indexOf(this.actionName) > -1) {
+      if (['add_piece_drawer', 'edit_piece_drawer', 'relate_piece_drawer', 'collect_book_drawer'].indexOf(this.actionName) > -1) {
         return 600
       }
       return 400
@@ -181,11 +179,10 @@ export default {
       this.loadingPiece = false
     },
     loadPieceRecent (val) {
-      const strs = [this.$str.view, this.$str.add]
       getPieceRecent({'type': val}).then(res => {
         this.resultList = {
-          title: this.$str.recent + strs[val],
-          data: res
+          data: res,
+          type: val
         }
       })
     },
@@ -209,18 +206,16 @@ export default {
         'content': this.$str.content,
         'author': this.$str.author,
         'book': this.$str.book,
-        'series': this.$str.series,
+        'collect': this.$str.collect,
         'piece': this.$str.piece,
         'relate': this.$str.relate
       }
       if (name.indexOf('drawer') > -1) {
-        var keys = name.split('_')
-        this.drawerTitle = dic[keys[0]] + dic[keys[1]]
         this.actionName = name
         this.showDrawer = true
       } else {
         switch (name) {
-          case 'recent_view':
+          case 'recent_read':
             this.loadPieceRecent(0)
             break
           case 'recent_add':
@@ -349,7 +344,6 @@ export default {
     returnResult (name, list) {
       this.resultName = name
       this.resultList = {
-        title: this.$str.search_result,
         data: list
       }
       this.showDrawer = false
@@ -432,9 +426,19 @@ export default {
     color: white;
   }
 }
-.dash-board {
+.dashboard {
   .center-horizontal();
-  width: 160px;
+  width: 150px;
   bottom: 12px;
+}
+.ivu-menu-item-active:not(.ivu-menu-submenu) {
+  background: none!important;
+  color: @primary-color!important;
+  &:after {
+    background: @primary-color!important;
+  }
+}
+.drawer {
+  background: transparent;
 }
 </style>

@@ -75,7 +75,6 @@ export default {
     }
   },
   mounted () {
-    console.log(this.piece)
     this.clientWidth = document.documentElement.clientWidth;
     if (this.readMode) {
       this.maxColumn = Math.floor((this.clientWidth - 250) / 36)

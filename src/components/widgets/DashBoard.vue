@@ -36,7 +36,6 @@ export default {
   .data-panel {
     width: 150px;
     height: 150px;
-    margin: 0 auto;
     background: @card-bg;
     border: none;
     cursor: pointer;

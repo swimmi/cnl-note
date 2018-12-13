@@ -1,12 +1,12 @@
 <template>
-  <Card class="piece" :padding="0" style="border: none">
+  <Card class="piece" :padding="0" dis-hover :bordered="false">
     <div class="piece-info">
       <div class="info-left">
         <Icon v-if="hasBookmark" type="ios-bookmark" size="20" color="#f3515188"/>
       </div>
       <div class="info-right">
-        <span v-if="piece.lastViewAt != null"><Time :time="piece.lastViewAt"/><Icon type="ios-book-outline" size="16" color="#aaa"/></span>
-        <span v-else>{{ $str.not_yet + $str.read }}</span>
+        <span v-show="type == 0"><Time :time="this.piece.lastViewAt"/> <Icon type="ios-book-outline" size="16" color="#aaa"/></span>
+        <span v-show="type == 1"><Time :time="this.piece.createdAt"/> <Icon type="ios-add-circle-outline" size="16" color="#aaa"/></span>
       </div>
     </div>
     <div class="piece-header">
@@ -36,11 +36,16 @@ export default {
     piece: {
       type: Object,
       require: true
+    },
+    type: {
+      type: Number,
+      required: false
     }
   },
   data () {
     return {
-      menuShow: false
+      menuShow: false,
+      showList: true
     }
   },
   computed: {
@@ -62,13 +67,16 @@ export default {
   text-align: center;
   width: 80%;
   margin: 12px auto;
+  border: none;
   background: transparent;
   padding: 12px 12px 6px 12px;
   cursor: pointer;
   transition: all 1s;
   -webkit-transition: all 1s;
+  opacity: 0.7;
   &:hover {
-    background: @paper-bg;
+    background: @white-bg;
+    opacity: 1;
   }
   &:hover .piece-footer {
     opacity: 1;
@@ -94,7 +102,7 @@ export default {
       height: @title-height;
       line-height: @title-height;
       font-size: @title-size;
-      color: @text-black;
+      color: @primary-color;
       font-weight: bold;
     }
     .piece-author {
@@ -137,7 +145,7 @@ export default {
     }
     .submenu {
       position: absolute;
-      background: @menu-bg;
+      background: @primary-color;
       bottom: @title-height;
       border-radius: @base-radius;
       right: 0px;
@@ -149,15 +157,15 @@ export default {
         left: calc(50% - @size);
         border-left: @size solid @card-bg;
         border-right: @size solid @card-bg;
-        border-top: @size solid @menu-bg;
+        border-top: @size solid @primary-color;
       }
       .submenu-item {
         display: block;
-        color: @text-white;
+        color: @white-bg;
         line-height: @title-height;
         font-size: @subtitle-size;
         &:hover {
-          color: @page-border;
+          color: white;
         }
       }
     }

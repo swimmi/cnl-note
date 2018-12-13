@@ -129,6 +129,20 @@ router.post('/author/dynasty', (req, res) => {
 })
 
 /**
+ * 书籍
+ */
+router.post('/book/add', (req, res) => {
+  var book = new models.Book(req.body.book)
+  book.save((err, data) => {res.send(err?err:data)})
+})
+router.get('/book/all', (req, res) => {
+  models.Book.find((err, data) => {res.send(err?err:data)})
+})
+router.post('/book/category', (req, res) => {
+  models.Book.find({'category': req.body.category}, (err, data) => {res.send(err?err:data)})
+})
+
+/**
  * 通用
  */
 // Util
