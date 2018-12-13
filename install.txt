@@ -1,0 +1,10 @@
+cnpm install less less-loader --save-dev
+cnpm install iview --save
+cnpm install iview-loader --save-dev
+cnpm install vue-resource --save
+cnpm install express mysql body-parser --save
+cnpm install axios --save
+cnpm install vue-style-loader --save
+cnpm install sass-resources-loader --save-dev
+cnpm install vue-bus -S
+cnpm install animate.css -D

@@ -1,0 +1,83 @@
+@primary-color: #a86f2dd2;
+@paper-bg: #f0fcfba2;
+@card-bg: #e9e8e871;
+@menu-bg: #bdbdbdc9;
+
+// text-color
+@text-black: #222;
+@text-white: rgb(240, 240, 240);
+@text-grey: #aaa;
+@text-vice: #888;
+
+@page-border: rgb(102, 102, 117);
+@bookmark-color: #f35151e1;
+@stamp-color: #ff0000;
+
+// font-size
+@font-small: 12px;
+@font-middle: 16px;
+@font-big: 20px;
+@font-large: 24px;
+
+@title-size: 18px;
+@subtitle-size: 16px;
+
+@subtext-size: 14px;
+
+@title-height: 32px;
+@subtitle-height: 24px;
+
+@v-title-width: 16px;
+
+@base-radius: 5px;
+
+@font-face {
+  font-family: MyFont;
+  src: url('~@/assets/fonts/default.ttf')
+}
+@font-face {
+  font-family: Weibei;
+  src: url('~@/assets/fonts/weibei.ttf')
+}
+@font-face {
+  font-family: Zhuanti;
+  src: url('~@/assets/fonts/zhuanti.ttf')
+}
+
+.icon-btn {
+  background: @paper-bg;
+  border: 4px @primary-color double;
+  padding: 4px;
+  cursor: pointer;
+  &:hover {
+    background: @card-bg;
+  }
+}
+.icon-btn-disabled {
+  border: 4px @card-bg double;
+}
+.v-title {
+  display: block;
+  width: @v-title-width;
+  line-height: @v-title-width;
+  font-size: @v-title-width;
+}
+.center-title {
+  width: 100%;
+  text-align: center;
+  line-height: @title-height;
+}
+.center-horizontal {
+  position: absolute;
+  left: 50%;
+  transform: translate(-50%, 0%);
+}
+.center-parent {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+.drawer-form {
+  padding: 12px;
+}
