@@ -77,6 +77,7 @@
       </book-item>
     </Sider>
     <Drawer ref="drawer" placement="left" :closable="false" v-model="showDrawer" :width="drawerWidth" @on-close="back" class="drawer">
+      <Divider>{{ drawerTitle }}</Divider>
       <section v-if="actionName === 'add_author_drawer'"><add-author></add-author></section>
       <section v-else-if="actionName === 'add_book_drawer'"><add-book></add-book></section>
       <section v-else-if="actionName === 'collect_book_drawer'"><collect-book></collect-book></section>
@@ -145,11 +146,12 @@ export default {
       bookList: [],         // 当前展示的书籍列表
       selectedBook: null,   // 当前选中的书籍
       selectedCategory: '', // 当前选中的索引目录
-      selectedPieceId: 0,   // 当前选中的篇章id
-      selectedPiece: null,  // 当前选中的篇章
+      selectedPieceId: this.piece._id,   // 当前选中的篇章id
+      selectedPiece: this.piece,  // 当前选中的篇章
+      drawerTitle: '',
       bookSeries: [],       // 书籍卷册
       pieceToDo: '',        // 待操作的篇章
-      isReadMode: false     // 阅读模式
+      isReadMode: true     // 阅读模式
     }
   },
   mounted () {
@@ -177,6 +179,12 @@ export default {
       this.selectedPiece = this.piece
       this.selectedPieceId = this.piece._id
       this.loadingPiece = false
+      document.onkeyup = (event) => {
+        let e = event || window.event || arguments.callee.caller.arguments[0]
+        if (e && e.keyCode == 32 && event.target.tagName == 'BODY') {
+          this.changeMode()
+        }
+      }
     },
     loadPieceRecent (val) {
       getPieceRecent({'type': val}).then(res => {
@@ -211,6 +219,8 @@ export default {
         'relate': this.$str.relate
       }
       if (name.indexOf('drawer') > -1) {
+        const names = name.split('_')
+        this.drawerTitle = dic[names[0]] + dic[names[1]]
         this.actionName = name
         this.showDrawer = true
       } else {

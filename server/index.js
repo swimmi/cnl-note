@@ -12,4 +12,4 @@ app.use('/api', api)
 
 // 監聽端口
 app.listen(3000)
-console.log('success listen at port:3000......')
+console.log('路漫漫其修远兮，吾将上下而求索···')

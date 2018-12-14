@@ -25,6 +25,8 @@
         v-model="book.author"
         filterable
         remote
+        label-in-value
+        @on-change="selectedAuthor"
         :remote-method="queryAuthors"
         :loading="loadingAuthor">
         <Option v-for="(item, index) in authorList" :value="item.value" :key="index">{{ item.label }}</Option>
@@ -96,7 +98,8 @@ export default {
         this.allAuthors = res.map(item =>  {
           return {
             value: item._id,
-            label: item.name.full
+            label: item.name.full,
+            dynasty: item.dynasty
           }
         })
         this.loading = false
@@ -123,11 +126,15 @@ export default {
         this.authorList = []
       }
     },
+    selectedAuthor (val) {
+      if (val.label != this.$str.name_unknown) {
+        this.book.dynasty = this.allAuthors.filter(item => item.value == val.value)[0].dynasty
+      }
+    },
     submit () {
       this.$refs['book'].validate((valid) => {
         if (valid) {
           addBook({book: this.book}).then(res => {
-            console.log(res)
             this.$bus.emit('back')
           })
           this.$Message.success(this.$str.submit)

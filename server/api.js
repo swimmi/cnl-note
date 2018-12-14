@@ -5,7 +5,7 @@ var mongoose = require('mongoose')
 var models = require('./models')
 
 // 連接數據庫
-mongoose.connect(db.mongodb)
+mongoose.connect(db.mongodb, {useNewUrlParser: true})
 
 /**
  * 篇章
@@ -16,7 +16,7 @@ router.post('/piece/add', (req, res) => {
 })
 router.post('/piece/update', (req, res) => {
   const piece = new models.Piece(req.body.piece)
-  models.Piece.findByIdAndUpdate(piece._id, {
+  models.Piece.updateOne({_id: piece._id}, {
     'title': piece.title,
     'desc': piece.desc,
     'author': piece.author,
@@ -32,7 +32,7 @@ router.post('/piece/get', (req, res) => {
     exec((err, data) => {res.send(err?err:data)})
 })
 router.get('/piece/all', (req, res) => {
-  models.Piece.find((err, data) => {res.send(err?err:data)})
+  models.Piece.find({}).select('_id title').exec((err, data) => {res.send(err?err:data)})
 })
 router.post('/piece/search', (req, res) => {
   const key = req.body.keyword
@@ -67,31 +67,32 @@ router.post('/piece/content/get', (req, res) => {
 router.post('/piece/content/update', (req, res) => {
   const id = req.body.id
   const content = req.body.content
-  models.Piece.update({_id: id}, {$set: {'content': content}}, (err, data) => {res.send(err?err:data)})
+  models.Piece.updateOne({_id: id}, {$set: {'content': content}}, (err, data) => {res.send(err?err:data)})
 })
 // 篇章相关
 router.post('/piece/relate/update', (req, res) => {
   const id = req.body.id
   const type = req.body.type
   const content = req.body.content
-  models.Piece.update({_id: id}, {$pull: {'relates': {'type': type}}}, () => {
-    models.Piece.update({_id: id}, {$push: {'relates': {'type': type, 'content': content}}}, (err, data) => {res.send(err?err:data)})
+  models.Piece.updateOne({_id: id}, {$pull: {'relates': {'type': type}}}, () => {
+    models.Piece.updateOne({_id: id}, {$push: {'relates': {'type': type, 'content': content}}}, (err, data) => {res.send(err?err:data)})
   })
 })
 // 篇章书签
 router.post('/piece/bookmark/add', (req, res) => {
   const id = req.body.id
   const bookmark = req.body.bookmark
-  models.Piece.update({_id: id}, {$push: {'bookmarks': bookmark}}, (err, data) => {res.send(err?err:data)})
+  models.Piece.updateOne({_id: id}, {$push: {'bookmarks': bookmark}}, (err, data) => {res.send(err?err:data)})
 })
 router.post('/piece/bookmark/remove', (req, res) => {
   const id = req.body.id
   const col = req.body.col
-  models.Piece.update({_id: id}, {$pull: {bookmarks: {col: col}}} , (err, data) => {res.send(err?err:data)})
+  models.Piece.updateOne({_id: id}, {$pull: {bookmarks: {col: col}}} , (err, data) => {res.send(err?err:data)})
 })
 // 篇章浏览记录
 router.post('/piece/view/record', (req, res) => {
-  models.Piece.findByIdAndUpdate(req.body.id, {$set: {'lastViewAt': Date.now()}}, (err, data) => {res.send(err?err:data)})
+  const id = req.body.id
+  models.Piece.updateOne({_id: id}, {$set: {'lastViewAt': Date.now()}}, (err, data) => {res.send(err?err:data)})
 })
 // 最近篇章
 router.post('/piece/recent', (req, res) => {
@@ -122,7 +123,7 @@ router.post('/author/add', (req, res) => {
   author.save((err, data) => {res.send(err?err:data)})
 })
 router.get('/author/all', (req, res) => {
-  models.Author.find((err, data) => {res.send(err?err:data)})
+  models.Author.find({}).select('_id name').exec((err, data) => {res.send(err?err:data)})
 })
 router.post('/author/dynasty', (req, res) => {
   models.Author.find({'dynasty': req.body.dynasty}, (err, data) => {res.send(err?err:data)})
@@ -136,7 +137,16 @@ router.post('/book/add', (req, res) => {
   book.save((err, data) => {res.send(err?err:data)})
 })
 router.get('/book/all', (req, res) => {
-  models.Book.find((err, data) => {res.send(err?err:data)})
+  models.Book.find({}).select('_id title').exec((err, data) => {res.send(err?err:data)})
+})
+router.post('/book/catalog/get', (req, res) => {
+  const id = req.body.book
+  models.Book.findById(id, {'catalog': 1}, (err, data) => {res.send(err?err:data)})
+})
+router.post('/book/catalog/update', (req, res) => {
+  const id = req.body.book
+  const catalog = req.body.catalog
+  models.Book.updateOne({_id: id}, {$set: {'catalog': catalog}}, (err, data) => {res.send(err?err:data)})
 })
 router.post('/book/category', (req, res) => {
   models.Book.find({'category': req.body.category}, (err, data) => {res.send(err?err:data)})
@@ -148,10 +158,10 @@ router.post('/book/category', (req, res) => {
 // Util
 router.get('/util/dashboard', async (req, res) => {
   var counts = [0, 0, 0]
-  await models.Author.count((err, data) => {
+  await models.Author.countDocuments((err, data) => {
     if(!err) { counts[0] = data }
   })
-  await models.Piece.count((err, data) => {
+  await models.Piece.countDocuments((err, data) => {
     if(!err) { counts[1] = data }
   })
   await models.Piece.find({}, {content: 1}, (err, data) => {

@@ -60,7 +60,9 @@ var simple = {
   add_author: '集贤',
   add_piece: '收篇',
   add_book: '存书',
-  collect_book: '编撰',
+  collect: '编录',
+  collect_book: '编目',
+  browse: '浏览',
   // 提示
   no: '不',
   yes: '是',
@@ -75,7 +77,9 @@ var simple = {
   locked: '已锁定',
   no_content: '暂无此内容，请前往添加。',
   recent: '最近',
-  not_yet: '还未'
+  not_yet: '还未',
+  collect_book_tip: '请选择要编录的书籍',
+  collect_piece_tip: '请添加卷册或选择篇章'
 }
 var traditional = {
 }

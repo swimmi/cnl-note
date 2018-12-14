@@ -6,6 +6,12 @@ export const addBook =  async function (params) {
 export const updateBook = async function (params) {
   return (await api.post('/book/update', params)).data
 }
+export const getCatalog = async function (params) {
+  return (await api.post('/book/catalog/get', params)).data
+}
+export const updateCatalog = async function (params) {
+  return (await api.post('/book/catalog/update', params)).data
+}
 // 查询类
 export const getBook = async function (params) {
   return (await api.post('/book/get', params)).data

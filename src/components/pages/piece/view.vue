@@ -1,7 +1,13 @@
 <template>
   <div class="piece-page">
     <div class="piece-space">
-      <Icon class="page-expand" type="ios-book-outline" size="24" color="#333" :title="$str.read + $str.mode" @click="expandPage"/>
+      <Icon
+        class="page-expand"
+        :type="readMode?'ios-paper-outline':'ios-book-outline'"
+        size="24"
+        color="#333"
+        :title="(readMode?$str.browse:$str.read) + $str.mode"
+        @click="expandPage"/>
       <div class="page-control">
         <Icon
           class="page-prev"
