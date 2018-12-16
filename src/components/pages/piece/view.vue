@@ -1,5 +1,6 @@
 <template>
-  <div class="piece-page">
+  <Spin v-if="loading"/>
+  <div v-else class="piece-page" ref="page">
     <div class="piece-space">
       <Icon
         class="page-expand"
@@ -29,35 +30,42 @@
         <div class="column" v-for="(column, index) in page">
           <span class="bookmark-space" :class="{'bookmark': indexBookmark(pi, index) > -1}" @click="bookmark(pi, index, column)" :title="$str.add + $str.bookmark"></span>
           <span
-          　　class="v-text"
-          　　:class="{'column-indent': indentColumns[pageIndex].indexOf(index) != -1, 'column-vice': viceColumns.indexOf(pi * maxColumn + index) != -1}">
-              {{ column }}
+            class="v-text"
+            :class="{'column-indent': isIndent(index), 'column-vice': isVice(pi, index), 'column-title': isTitle(pi, index)}">
+            {{ column }}
           </span>
         </div>
         <div class="column" v-for="n in maxColumn - page.length"><span class="v-text"></span></div>
       </div>
-      <div class="piece-stamp animated fadeIn" v-show="pageIndex == pages.length - 1"><span>{{ stampText(piece.author.name.full) }}</span></div>
+      <div class="piece-stamp animated fadeIn" v-show="pageIndex == pages.length - 1"><span>{{ stampText(author) }}</span></div>
     </div>
     <div class="piece-title-container">
-      <span class="v-title piece-title">{{ piece.title }}</span>
+      <span class="v-title piece-title">{{ title }}</span>
       <div class="piece-content-title">
         <span
           v-for="(item, index) in contents"
           :key="index"
           class="v-title content-title"
           :class="{'selected': contentIndex === index}"
-          @click="changeContent(index)">{{ [$str.char[0], $str.annotate[0], $str.translate[1], $str.comment[0], $str.appreciate[0]][index] }}</span>
+          @click="changeContent(index)">
+          {{ [$str.char[0], $str.annotate[0], $str.translate[1], $str.comment[0], $str.appreciate[0]][index] }}
+        </span>
       </div>
     </div>
   </div>
 </template>
 <script>
-import { getPieceRelate, addBookmark, removeBookmark, recordPieceView } from '@/api/piece'
+import { getPiece, getPieceRelate, addBookmark, removeBookmark, savePieceHistory } from '@/api/piece'
+import { getBookContent } from '@/api/book'
 export default {
   name: 'view-piece',
   props: {
-    piece: {
-      type: Object,
+    id: {
+      type: String,
+      required: true
+    },
+    isBook: {
+      type: Boolean,
       required: true
     },
     readMode: {
@@ -67,60 +75,119 @@ export default {
   },
   data () {
     return {
+      title: '',
+      srcContent: '',
       contents: new Array(5).fill(this.$str.no_content),
       contentIndex: 0,
-      maxColumn: 16,
-      maxRow: 36,
+      author: '',
+      maxColumn: 8,
+      maxRow: 8,
       pageIndex: 0,
       pages: [],
       indentColumns: [],
       viceColumns: [],
+      titleColumns: [],
       bookmarks: [],
-      clientWidth: 600,
-      showPiece: false
+      cw: 0,
+      ch: 0,
+      showPiece: false,
+      loading: true
+    }
+  },
+  computed: {
+    isIndent() {
+      return function (index) {
+        return this.indentColumns[this.pageIndex].indexOf(index) != -1
+      }
+    },
+    isVice() {
+      return function (pi, index) {
+        return this.viceColumns.indexOf(pi * this.maxColumn + index) != -1
+      }
+    },
+    isTitle() {
+      return function (pi, index) {
+        return this.titleColumns.indexOf(pi * this.maxColumn + index) != -1
+      }
     }
   },
   mounted () {
-    this.clientWidth = document.documentElement.clientWidth;
+    this.cw = document.documentElement.clientWidth;
+    this.ch = document.documentElement.clientHeight;
+    this.maxRow = Math.floor((this.ch * 0.9 - 50) / 22)
     if (this.readMode) {
-      this.maxColumn = Math.floor((this.clientWidth - 250) / 36)
+      this.maxColumn = Math.floor((this.cw - 250) / 36)
+    } else {
+      this.maxColumn = Math.floor((this.cw - 900) / 36)
     }
     window.onresize = () => {
-        this.clientWidth = document.documentElement.clientWidth;
+        this.cw = document.documentElement.clientWidth;
+        this.ch = document.documentElement.clientHeight;
         if (this.readMode) {
-          this.maxColumn = Math.floor((this.clientWidth - 250) / 36)
-          if (this.maxColumn < 12) {
-            this.maxColumn = 12
+          this.maxColumn = Math.floor((this.cw - 250) / 36)
+          this.maxRow = Math.floor((this.ch * 0.9 - 50) / 22)
+          if (this.maxColumn < 8) {
+            this.maxColumn = 8
           }
-          this.getContent()
+          if (this.maxRow < 8) {
+            this.maxRow = 8
+          }
+          this.showContent()
+        } else {
+          this.maxColumn = Math.floor((this.cw - 900) / 36)
         }
     }
-    if (this.piece.hasOwnProperty('bookmarks')) {
-      this.bookmarks = this.piece.bookmarks.map(item => {
-        return Math.floor(item.col / this.maxColumn) + '-' + (item.col % this.maxColumn)
+    if (this.isBook) {
+      getBookContent({'book': this.id}).then(res => {
+        if (res) {
+          this.title = res.title
+          this.author = res.author.name.full
+          res.catalog.forEach(item => {
+            this.getItemContent(item)
+          })
+          this.contents[0] = this.srcContent
+          this.showContent()
+        }
+      })
+    } else {
+      getPiece({'id': this.id}).then(res => {
+        this.title = res.title
+        this.author = res.author.name.full
+        this.srcContent = res.content
+        if (res.hasOwnProperty('bookmarks')) {
+          this.bookmarks = res.bookmarks.map(item => {
+            return Math.floor(item.col / this.maxColumn) + '-' + (item.col % this.maxColumn)
+          })
+        }
+        // 加入题序
+        // 加入相关内容
+        res.relates.forEach(item => {
+          this.contents[item.type + 1] = item.content
+        })
+        savePieceHistory({id: this.id})
+        this.contents[0] = this.srcContent
+        this.showContent()
       })
     }
-    this.getContent()
-    recordPieceView({id: this.piece._id})
   },
   methods: {
-    getContent () {
-      // 载入原文
-      // 加入题序
-      var src = this.piece.content
-      var hasDesc = false
-      if (this.piece.desc.trim() != '') {
-        src = this.piece.desc + '\r\n' + '..' + '\r\n' + src
-        hasDesc = true
-      }
-      this.contents[0] = src
-      // 加入相关内容
-      this.piece.relates.forEach(item => {
-        this.contents[item.type + 1] = item.content
+    fillTitle (title) {
+      var n = title.length - 2
+      return '┐ ' + '│ '.repeat(n) + `┘\n${title}\n┌ ` + '│ '.repeat(n) + '└'
+    },
+    getItemContent(item) {
+      this.srcContent += this.fillTitle(item.title) + item.desc + '\n'
+      item.pieces.forEach(piece => {
+        this.srcContent += this.fillTitle(piece.title)  + piece.desc + '\n' + piece.content + '\n'
       })
+      item.children.forEach(subitem => {
+        this.getItemContent(subitem)
+      })
+    },
+    showContent () {
       // 处理文本
       const text = this.contents[this.contentIndex]
-      var columnCount = 0
+      var columnIndex = 0
       // 段首缩进
       var paragraphs = text.split(/\n|\r\n/)
       this.indentColumns = []                 // 需缩进的行
@@ -128,38 +195,39 @@ export default {
       var page = []                           // 页
       var content = []                        // 文
       paragraphs.forEach(element => {
-        for (var i = 0; i < element.length; i += this.maxRow) {
-          if (i == 0) {
-            element = '＠＠' + element
+        if (element.trim() != '') {
+          for (var i = 0; i < element.length; i += this.maxRow) {
+            if (i == 0) {
+              element = '＠＠' + element
+            }
+            var c = element.slice(i, i + this.maxRow)
+            // 句读加空格在前
+            c = this.$util.parseColumn(c).replace('＠＠', '')
+            if (c[0] == '┐') {
+              this.titleColumns.push(content.length * this.maxColumn + columnIndex + 1)
+            }
+            page.push(c)
+            columnIndex++
+            if (columnIndex === this.maxColumn) {
+              content.push(page)
+              this.indentColumns.push(indent)
+              indent = []
+              page = []
+              columnIndex = 0
+            }
           }
-          var c = element.slice(i, i + this.maxRow)
-          // 句读加空格在前
-          c = this.$util.parseColumn(c).replace('＠＠', '')
-          page.push(c)
-          if (hasDesc) {
-            this.viceColumns.push(columnCount)
-          }
-          if (c == '..') {
-            hasDesc = false
-          }
-          columnCount++
-          if (columnCount === this.maxColumn) {
-            content.push(page)
-            this.indentColumns.push(indent)
-            indent = []
-            page = []
-            columnCount = 0
-          }
+          indent.push(columnIndex)
         }
-        indent.push(columnCount)
       })
       if (page.length > 0) {
         content.push(page)
         this.indentColumns.push(indent)
       }
-      this.indentColumns[0].push(0)
-      this.loading = false
+      if (this.indentColumns.length > 0) {
+        this.indentColumns[0].push(0)
+      }
       this.pages = content
+      this.loading = false
     },
     indexBookmark: function (pi, ci) {
       return this.bookmarks.indexOf(pi + '-' + ci)
@@ -168,13 +236,13 @@ export default {
       var i = this.indexBookmark(pi, ci)
       if (i > -1) {
         removeBookmark({
-          id: this.piece._id,
+          id: this.id,
           col: ci + pi * this.maxColumn
         })
         this.bookmarks.splice(i, 1)
       } else {
         addBookmark({
-          id: this.piece._id,
+          id: this.id,
           bookmark: {
             col: ci + pi * this.maxColumn,
             text: column,
@@ -187,7 +255,9 @@ export default {
     changeContent (index) {
       this.showPiece = true
       this.contentIndex = index
-      this.getContent()
+      this.pageIndex = 0
+      this.srcContent = ''
+      this.showContent()
       setTimeout(()=> {
         this.showPiece = false
       }, 1000)
@@ -197,10 +267,10 @@ export default {
     },
     stampText (val) {
       if (val.length == 3) {
-        val = val + '著'
+        val = val + '作'
       }
       if (val.length == 2) {
-        val = val + '之著'
+        val = val + '之作'
       }
       const str = val.charAt(2) + val.charAt(0) + val.charAt(3) + val.charAt(1)
       return str
@@ -212,11 +282,10 @@ export default {
 .piece-page {
   @base-size: 24px;
   @text-size: 18px;
-  @column-size: 36;
   @line-width: calc(@text-size * 2);
   @line-height: @text-size + 4px;
   @page-border-size: 4px;
-  height: calc(@line-height * @column-size + calc(@base-size + @page-border-size) * 2);
+  height: 90%;
   .piece-content {
     position: relative;
     display: inline-block;
@@ -292,6 +361,11 @@ export default {
         .column-vice {
           color: @text-vice;
           font-size: @subtitle-size;
+        }
+        .column-title {
+          color: @text-black;
+          font-size: @title-size;
+          font-weight: bold;
         }
       }
     }

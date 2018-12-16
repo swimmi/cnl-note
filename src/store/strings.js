@@ -1,5 +1,6 @@
 var simple = {
   // 名词
+  menu: '菜单',
   author: '作者',
   book: '书籍',
   series: '卷册',
@@ -46,6 +47,7 @@ var simple = {
   view: '查看',
   read: '阅读',
   edit: '编辑',
+  record: '朗读',
   translate: '翻译',
   modify: '修改',
   comment: '评论',
@@ -63,6 +65,10 @@ var simple = {
   collect: '编录',
   collect_book: '编目',
   browse: '浏览',
+  drag: '拖动',
+  sort: '排序',
+  start: '开始',
+  stop: '停止',
   // 提示
   no: '不',
   yes: '是',
@@ -79,7 +85,7 @@ var simple = {
   recent: '最近',
   not_yet: '还未',
   collect_book_tip: '请选择要编录的书籍',
-  collect_piece_tip: '请添加卷册或选择篇章'
+  template_tip: '标题模板（如\'第n章\')'
 }
 var traditional = {
 }

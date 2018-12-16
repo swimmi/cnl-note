@@ -85,18 +85,11 @@ export default {
   background-repeat: no-repeat;
   background-size: auto 200vh;
   background-position: 0px 0%;
-  animation: bgFloat 120s linear infinite;
-  @keyframes bgFloat {
-    0% {background-position: 0% 0%}
-    25% {background-position: 100% 0%}
-    50% {background-position: 100% 100%}
-    75% {background-position: 0% 100%}
-    100% {background-position: 0% 0%}
-  }
+  animation: bgFloat 180s ease-in-out infinite;
   .change-btn {
     position: absolute;
-    top: 16px;
-    right: 16px;
+    top: 8px;
+    right: 8px;
     padding: 8px;
     cursor: pointer;
     transition: all 1s;

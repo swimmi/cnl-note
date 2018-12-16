@@ -1,23 +1,26 @@
 <template>
-  <Form :model="author" :label-width="40" ref="author" class="drawer-form">
+  <Form :model="author" :label-width="60" ref="author" class="drawer-form">
     <FormItem :label="$str.type">
       <RadioGroup v-model="typeText" @on-change="changeType">
         <Radio label="person">{{ $str.person }}</Radio>
         <Radio label="group">{{ $str.group }}</Radio>
       </RadioGroup>
     </FormItem>
+    <FormItem :label="$str.name">
+      <Input v-model="author.name.full"></Input>
+    </FormItem>
     <section v-if="author.type == 1">
       <FormItem :label="$str.name_xing">
-        <Input v-model="author.name.xing" :placeholder="$str.input_tip"></Input>
+        <Input v-model="author.name.xing"></Input>
       </FormItem>
       <FormItem :label="$str.name_ming">
-        <Input v-model="author.name.ming" :placeholder="$str.input_tip"></Input>
+        <Input v-model="author.name.ming"></Input>
       </FormItem>
       <FormItem :label="$str.name_zi">
-        <Input v-model="author.name.zi" :placeholder="$str.input_tip"></Input>
+        <Input v-model="author.name.zi"></Input>
       </FormItem>
       <FormItem :label="$str.name_hao">
-        <Input v-model="author.name.hao" :placeholder="$str.input_tip"></Input>
+        <Input v-model="author.name.hao"></Input>
       </FormItem>
       <FormItem :label="$str.birth_death">
         <Switch v-model="hasBirthYear"><span slot="open">{{ $str.birth_death[0] }}</span><span slot="close">{{ $str.no }}</span></Switch>
@@ -26,12 +29,7 @@
         <InputNumber :max="2000" :min="-3000" v-model="author.years.death" :disabled="!hasDeathYear" :style="{width: '60px'}"></InputNumber>
       </FormItem>
       <FormItem :label="$str.native_place">
-        <Input v-model="author.native_place" :placeholder="$str.input_tip"></Input>
-      </FormItem>
-    </section>
-    <section v-else>
-      <FormItem :label="$str.name">
-        <Input v-model="author.name.full" :placeholder="$str.input_tip"></Input>
+        <Input v-model="author.native_place"></Input>
       </FormItem>
     </section>
     <FormItem :label="$str.dynasty">
@@ -43,16 +41,12 @@
       </Select>
     </FormItem>
     <FormItem :label="$str.tag">
-      <Input v-model="tagText" :placeholder="$str.input_tip" style="width: 120px" />
+      <Input v-model="tagText" style="width: 120px" />
       <Button icon="ios-add" type="dashed" @click="handleAdd"></Button><Br />
       <Tag v-for="item in author.tags" :key="item" :name="item" closable @on-close="handleClose">{{ item }}</Tag>
     </FormItem>
     <FormItem :label="$str.introduce">
-        <Input v-model="author.introduce" type="textarea" :autosize="{minRows: 5,maxRows: 8}" :placeholder="$str.input_tip"></Input>
-    </FormItem>
-    <FormItem>
-        <Button type="primary" @click="submit">{{ $str.submit }}</Button>
-        <Button style="margin-left: 8px" @click="$bus.emit('back')">{{ $str.back }}</Button>
+        <Input v-model="author.introduce" type="textarea" :autosize="{minRows: 5,maxRows: 8}"></Input>
     </FormItem>
   </Form>
 </template>

@@ -51,10 +51,6 @@
     <FormItem :label="$str.introduce" prop="introduce">
         <Input v-model="book.introduce" type="textarea" :autosize="{minRows: 5,maxRows: 8}" :placeholder="$str.input_tip"></Input>
     </FormItem>
-    <FormItem>
-        <Button type="primary" @click="submit">{{ $str.submit }}</Button>
-        <Button style="margin-left: 8px" @click="$bus.emit('back')">{{ $str.back }}</Button>
-    </FormItem>
   </Form>
 </template>
 <script>

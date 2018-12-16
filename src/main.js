@@ -9,6 +9,7 @@ import strings from '@/store/strings.js'
 import utils from '@/store/utils.js'
 import axios from 'axios'
 import api from '@/api'
+import 'babel-polyfill'
 import VueBus from 'vue-bus'
 import 'animate.css'
 

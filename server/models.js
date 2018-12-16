@@ -23,6 +23,10 @@ const pieceSchema = Schema({
   hidden: Boolean,
   lastViewAt: Date                            // 上次浏览
 }, {collection: 'pieces', timestamps: true})
+pieceSchema.pre('find', function(next) {
+  this.populate('author', 'name.full')
+  next()
+})
 
 // 作者
 const authorSchema = Schema({
@@ -55,10 +59,27 @@ const bookSchema = Schema({
   tags: [String],
   prologue: String,
   introduce: String,
-  catalog: [],
+  catalog: [
+    {
+      title: String,
+      show_desc: Boolean,
+      desc: String,
+      children: [{
+        children: [{
+          pieces: [{ type: ObjectId, ref: 'Piece' }]
+        }],
+        pieces: [{ type: ObjectId, ref: 'Piece' }]
+      }],
+      pieces: [{ type: ObjectId, ref: 'Piece' }]
+    }
+  ],
   hidden: { type: Boolean, default: false },
   lastViewAt: Date
 }, {collection: 'books', timestamps: true})
+bookSchema.pre('find', function(next) {
+  this.populate('author', 'name.full')
+  next()
+})
 
 const models = {
   Piece: mongoose.model('Piece', pieceSchema),

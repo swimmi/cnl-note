@@ -9,7 +9,8 @@
               v-model="book"
               filterable
               remote
-              style="width: 300px"
+              size="small"
+              style="width: 160px"
               @on-change="selectedBook"
               :placeholder="$str.collect_book_tip"
               :remote-method="queryBooks"
@@ -17,15 +18,16 @@
               <Option v-for="(item, index) in bookList" :value="item.value" :key="index">{{ item.label }}</Option>
             </Select>
           </div>
-          <div class="panel-btn" @click.stop>
-            <Button v-if="book != ''" @click="addChild()" size="small"><Icon type="md-add" color="green"/></Button>
+          <div v-if="book != ''" class="panel-btn" @click.stop>
+            <Input v-show="templateCount > 0" size="small" style="width: 160px" v-model="templateString" :placeholder="$str.template_tip"></Input>
+            <InputNumber size="small" style="width: 60px" v-model="templateCount" :max="100" :min="0"></InputNumber>
+            <Button @click="addChild()" size="small"><Icon type="md-add" color="green"/></Button>
           </div>
           <div slot="content">
-            <span class="content-tip">{{ $str.collect_piece_tip}}</span>
             <Collapse accordion v-if="catalog.length > 0">
-              <Panel class="panel" v-for="(item, index) in catalog" :key="index">
+              <Panel class="panel" v-for="(item, index) in catalog" :key="item.title">
                 <div class="panel-title" @click.stop>
-                  <Input style="width: 120px" v-model="item.title"/>
+                  <Input style="width: 120px" size="small" v-model="item.title"/>
                   <Checkbox v-model="item.show_desc">{{ $str.prologue }}</Checkbox>
                 </div>
                 <div class="panel-btn" @click.stop>
@@ -35,15 +37,14 @@
                 </div>
                 <div slot="content">
                   <Input class="prologue-input" type="textarea" v-show="item.show_desc" v-model="item.desc" :autosize="{minRows: 3,maxRows: 8}" :placeholder="$str.input_tip + $str.prologue"></Input>
-                  <span v-if="item.pieces.length == 0" class="content-tip">{{ $str.collect_piece_tip}}</span>
-                  <div v-else class="piece-container">
+                  <div v-if="item.pieces.length > 0" class="piece-container">
                     <Tag v-for="(piece, index) in item.pieces" :key="index" type="dot">{{ piece.title }}</Tag>
                     <Badge :count="item.pieces.length"></Badge>
                   </div>
                   <Collapse accordion v-if="item.children.length > 0">
-                    <Panel v-for="(subitem, index) in item.children" :key="index">
+                    <Panel class="panel" v-for="(subitem, index) in item.children" :key="subitem.title">
                       <div class="panel-title" @click.stop>
-                        <Input style="width: 120px" v-model="subitem.title"/>
+                        <Input style="width: 120px" size="small" v-model="subitem.title"/>
                         <Checkbox v-model="subitem.show_desc">{{ $str.prologue }}</Checkbox>
                       </div>
                       <div class="panel-btn" @click.stop>
@@ -53,23 +54,23 @@
                       </div>
                       <div slot="content">
                         <Input class="prologue-input" type="textarea" v-show="subitem.show_desc" v-model="subitem.desc" :autosize="{minRows: 3,maxRows: 8}" :placeholder="$str.input_tip + $str.prologue"></Input>
-                        <div class="piece-container">
+                        <div v-if="subitem.pieces.length > 0" class="piece-container">
                           <Tag v-for="(piece, index) in subitem.pieces" :key="index" type="dot">{{ piece.title }}</Tag>
                           <Badge :count="subitem.pieces.length"></Badge>
                         </div>
                         <Collapse v-if="subitem.children.length > 0">
-                          <Panel v-for="(granditem, index) in subitem.children" :key="index">
+                          <Panel class="panel" v-for="(granditem, index) in subitem.children" :key="granditem.title">
                             <div class="panel-title" @click.stop>
-                              <Input style="width: 120px" v-model="granditem.title"/>
+                              <Input style="width: 120px" size="small" v-model="granditem.title"/>
                               <Checkbox v-model="granditem.show_desc">{{ $str.prologue }}</Checkbox>
                             </div>
                             <div class="panel-btn" @click.stop>
-                              <Button @click="collectPiece(granditem)" size="small"><Icon type="md-folder" color="green"/></Button>
+                              <Button @click="collectPiece(granditem)" size="small"><Icon type="md-folder"/></Button>
                               <Button @click="removeChild(subitem.children, granditem)" size="small"><Icon type="md-remove" color="red" /></Button>
                             </div>
                             <div slot="content">
                               <Input class="prologue-input" type="textarea" v-show="granditem.show_desc" v-model="granditem.desc" :autosize="{minRows: 3,maxRows: 8}" :placeholder="$str.input_tip + $str.prologue"></Input>
-                              <div class="piece-container">
+                              <div v-if="granditem.pieces.length > 0" class="piece-container">
                                 <Tag v-for="(piece, index) in granditem.pieces" :key="index" type="dot">{{ piece.title }}</Tag>
                                 <Badge :count="granditem.pieces.length"></Badge>
                               </div>
@@ -86,15 +87,20 @@
         </Panel>
       </Collapse>
     </FormItem>
-    <FormItem>
-      <Button type="primary" @click="submit">{{ $str.submit }}</Button>
-      <Button style="margin-left: 8px" @click="$bus.emit('back')">{{ $str.back }}</Button>
-    </FormItem>
-    <Drawer width="300" :title="$str.select_tip + $str.piece" placement="left" :closable="false" v-model="showDrawer">
+    <Drawer
+      v-model="showDrawer"
+      @on-close="closeDrawer"
+      :closable="false"
+      placement="left"
+      width="400"
+      class="drawer"
+      :styles="drawerStyles">
       <Form class="drawer-form">
         <FormItem>
           <Select
+            ref="pieceSelect"
             v-model="pieceTitle"
+            clearable
             filterable
             remote
             label-in-value
@@ -104,22 +110,22 @@
             <Option v-for="(item, index) in pieceList" :value="item.value" :key="index">{{ item.label }}</Option>
           </Select>
         </FormItem>
-        <FormItem>
-          <div class="piece-span-container" ref="spanContainer">
-            <span
-              class="piece-span"
-              v-for="(piece, index) in pieces"
-              :key="index" draggable='true'
-              @dragstart='drag($event)'
-              @drop='drop($event)'
-              @dragover='allowDrop($event)'>
-              <i class="float-left">{{ index + 1 }}</i>
-              {{ piece.title }}
-              {{ piece.brief }}
-              <Icon class="float-right" type="md-close" color="red" @click="removePiece(index)"/>
-            </span>
-          </div>
-        </FormItem>
+        <div class="piece-span-container" ref="spanContainer">
+          <draggable v-model="orderPieces">
+            <transition-group enter-active-class="animated flipInY" leave-active-class="animated flipOutY">
+              <span
+                class="piece-span"
+                v-for="(piece, index) in orderPieces"
+                :key="piece.id"
+                draggable='true'
+                :title="$str.drag + $str.sort">
+                <b class="float-left">{{ index + 1 }}.</b>
+                <span class="piece-title">{{ piece.title }}</span>
+                <Icon class="remove-btn" type="md-close" @click="removePiece(index)" :title="$str.remove + $str.piece"/>
+              </span>
+            </transition-group>
+          </draggable>
+        </div>
       </Form>
     </Drawer>
   </Form>
@@ -127,12 +133,17 @@
 <script>
 import { allBook, getCatalog, updateCatalog } from '@/api/book'
 import { allPiece } from '@/api/piece'
+import draggable from 'vuedraggable'
 export default {
+  components: {
+    draggable
+  },
   data () {
     return {
       book: '',
       catalog: [],
       pieces: [],
+      orderPieces: [],
       loadingBook: false,
       allBooks: [],
       bookList: [],
@@ -141,12 +152,15 @@ export default {
       pieceList: [],
       pieceTitle: '',
       showDrawer: false,
-      // 拖拽排序
-      moveDom: '',
-      changeDom: '',
-      startY: 0,
-      endY: 0,
-      loading: true
+      templateString: '',
+      templateCount: 0,
+      loading: true,
+      drawerStyles: {
+        background: 'url(static/images/drawer_bg.jpg)',
+        backgroundPosition: '50%',
+        backgroundSize: 'cover',
+        animation: 'bgFloatH 60s ease-in-out infinite'
+      }
     }
   },
   mounted () {
@@ -184,14 +198,28 @@ export default {
       var child = {
         title: '',
         show_desc: false,
-        desc: null,
+        desc: '',
         children: [],
         pieces: []
       }
       if (item) {
         item.children.push(child)
       } else {
-        this.catalog.push(child)
+        if (this.templateCount > 0 && this.templateString.indexOf('n') != -1) {
+          // 批量添加卷册
+          for(var i = 0; i < this.templateCount; i++) {
+            var c = {
+              title: this.templateString.replace('n', this.$util.parseNumber(i + 1)),
+              show_desc: false,
+              desc: '',
+              children: [],
+              pieces: []
+            }
+            this.catalog.push(c)
+          }
+        } else {
+          this.catalog.push(child)
+        }
       }
     },
     selectedBook (val) {
@@ -211,6 +239,7 @@ export default {
         this.loading = false
       })
       this.pieces = item.pieces
+      this.orderPieces = item.pieces.slice()
       this.showDrawer = true
     },
     queryPieces (query) {
@@ -228,45 +257,29 @@ export default {
       return data.indexOf(value) !== -1
     },
     selectedPiece (val) {
-      var piece = {
-        id: val.value,
-        title: val.label
+      if (val) {
+        var piece = {
+          id: val.value,
+          title: val.label
+        }
+        this.orderPieces.push(piece)
+        this.pieces.push(piece)
+        this.$refs.pieceSelect.clearSingleSelect()
       }
-      this.pieces.push(piece)
-      this.pieceTitle = ''
     },
     removePiece (index) {
+      this.orderPieces.splice(index, 1)
       this.pieces.splice(index, 1)
     },
-    // 拖拽排序
-    drag: function (event) {
-      this.moveDom = event.currentTarget
-      this.startY = event.clientY
-    },
-    drop: function (event) {
-      event.preventDefault()
-      this.changeDom = event.currentTarget
-      console.log(this.changeDom.parent)
-      this.endY = event.clientY
-      if (this.endY - this.startY >= 0) {
-        this.$refs.spanContainer.insertBefore(this.moveDom, this.changeDom.nextSibling)
-      } else {
-        this.$refs.spanContainer.insertBefore(this.moveDom, this.changeDom)
+    closeDrawer () {
+      for (var i = 0; i < this.orderPieces.length; i++) {
+        this.pieces[i] = this.orderPieces[i].id
       }
-    },
-    allowDrop: function (event) {
-      event.preventDefault()
-      this.endY = event.clientY
-      this.changeDom = event.currentTarget
-      if (this.endY - this.startY >= 0) {
-        this.$refs.spanContainer.insertBefore(this.moveDom, this.changeDom.nextSibling)
-      } else {
-        this.$refs.spanContainer.insertBefore(this.moveDom, this.changeDom)
-      }
+      console.log(this.catalog)
     },
     submit () {
       updateCatalog({'book': this.book, 'catalog': this.catalog}).then(res => {
-        console.log(res)
+        this.$Message.success(this.$str.submit_success)
       })
     }
   }
@@ -291,26 +304,39 @@ export default {
     text-align: right;
     color: @text-grey;
   }
-  .piece-container {
-    margin-bottom: 12px;
-  }
 }
 .piece-span-container {
   width: 100%;
-  height: calc(100vh - 300px);
   border-radius: @base-radius;
   border: 1px @border-color solid;
+  margin-top: 36px;
   .piece-span {
+    position: relative;
     display: block;
     border: 1px @border-color solid;
     border-radius: @base-radius;
-    padding: 4px 8px;
+    padding: 8px 12px;
     font-size: @subtext-size;
     text-align: center;
     cursor: pointer;
     margin: 8px;
+    background-color: @white-bg;
     &:hover {
       background-color: @card-bg;
+    }
+    .piece-title {
+      display: block;
+      width: calc(100% - 60px);
+      margin: 0 auto;
+      height: 20px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .remove-btn {
+      .center-vertical();
+      right: 8px;
+      color: @bookmark-color;
     }
   }
 }

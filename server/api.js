@@ -3,6 +3,8 @@ var express = require('express')
 var router = express.Router()
 var mongoose = require('mongoose')
 var models = require('./models')
+var fileUpload = require('express-fileupload');
+router.use(fileUpload({createParentPath: true}))
 
 // 連接數據庫
 mongoose.connect(db.mongodb, {useNewUrlParser: true})
@@ -90,7 +92,7 @@ router.post('/piece/bookmark/remove', (req, res) => {
   models.Piece.updateOne({_id: id}, {$pull: {bookmarks: {col: col}}} , (err, data) => {res.send(err?err:data)})
 })
 // 篇章浏览记录
-router.post('/piece/view/record', (req, res) => {
+router.post('/piece/history/save', (req, res) => {
   const id = req.body.id
   models.Piece.updateOne({_id: id}, {$set: {'lastViewAt': Date.now()}}, (err, data) => {res.send(err?err:data)})
 })
@@ -114,6 +116,10 @@ router.post('/piece/recent', (req, res) => {
       break;
   }
 })
+// 篇章朗读
+router.post('/piece/record/upload', (req, res) => {
+
+})
 
 /**
  * 作者
@@ -126,7 +132,10 @@ router.get('/author/all', (req, res) => {
   models.Author.find({}).select('_id name').exec((err, data) => {res.send(err?err:data)})
 })
 router.post('/author/dynasty', (req, res) => {
-  models.Author.find({'dynasty': req.body.dynasty}, (err, data) => {res.send(err?err:data)})
+  models.Author.
+    find({'dynasty': {$in: [req.body.dynasty, 0]}}).
+    sort({'dynasty': -1, 'years.birth': 1}).
+    exec((err, data) => {res.send(err?err:data)})
 })
 
 /**
@@ -135,6 +144,10 @@ router.post('/author/dynasty', (req, res) => {
 router.post('/book/add', (req, res) => {
   var book = new models.Book(req.body.book)
   book.save((err, data) => {res.send(err?err:data)})
+})
+router.post('/book/get', (req, res) => {
+  const id = req.body.id
+  models.Book.findById(id, (err, data) => {res.send(err?err:data)})
 })
 router.get('/book/all', (req, res) => {
   models.Book.find({}).select('_id title').exec((err, data) => {res.send(err?err:data)})
@@ -148,8 +161,23 @@ router.post('/book/catalog/update', (req, res) => {
   const catalog = req.body.catalog
   models.Book.updateOne({_id: id}, {$set: {'catalog': catalog}}, (err, data) => {res.send(err?err:data)})
 })
+router.post('/book/content', (req, res) => {
+  const id = req.body.book
+  models.Book.
+    findById(id).
+    select('title author prologue catalog').
+    populate('catalog.pieces catalog.children.pieces catalog.children.children.pieces', 'title desc content').
+    populate('author', 'name.full').
+    exec((err, data) => {res.send(err?err:data)})
+})
+router.post('/book/author', (req, res) => {
+  const author = req.body.author
+  const dynasty = req.body.dynasty
+  models.Book.find({'author': author, 'dynasty': dynasty}, (err, data) => {res.send(err?err:data)})
+})
 router.post('/book/category', (req, res) => {
-  models.Book.find({'category': req.body.category}, (err, data) => {res.send(err?err:data)})
+  const category = req.body.category
+  models.Book.find({'category': category}, (err, data) => {res.send(err?err:data)})
 })
 
 /**
@@ -172,6 +200,40 @@ router.get('/util/dashboard', async (req, res) => {
     }
   })
   res.send(counts)
+})
+
+router.get('/:dir/:id/:name', function(req, res) {
+  var dir = req.params.dir
+  var id = req.params.id
+  var options = {
+    root: __dirname + `/uploads/${dir}/${id}/`,
+    dotfiles: 'deny',
+    headers: {
+        'x-timestamp': Date.now(),
+        'x-sent': true
+    }
+  }
+  var name = req.params.name
+  res.sendFile(name, options, function (err) {
+    if (err) {
+      console.log(err)
+    } else {
+      console.log('Sent:', name)
+    }
+  })
+  console.log(__dirname)
+})
+router.post('/upload', function(req, res) {
+  if (Object.keys(req.files).length == 0) {
+    return res.status(400).send('No files were uploaded.')
+  }
+  let file = req.files.file
+  const id = req.body.id
+  file.mv(`uploads/records/${id}/` + file.name, function(err) {
+    if (err)
+      return res.status(500).send(err)
+    res.send('File uploaded!')
+  })
 })
 
 module.exports = router

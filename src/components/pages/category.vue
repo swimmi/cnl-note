@@ -1,8 +1,7 @@
 <template>
   <div class="category">
-    <Divider>{{ $str.index }}</Divider>
-    <Tree :data="categoryList" @on-select-change="selectCategory"></Tree>
-    <Tree :data="dynastyList" @on-select-change="selectDynasty"></Tree>
+    <Tree class="tree" :data="categoryList" @on-select-change="selectCategory"></Tree>
+    <Tree class="tree" :data="dynastyList" @on-select-change="selectDynasty"></Tree>
   </div>
 </template>
 <script>
@@ -37,7 +36,6 @@ export default {
             is_author: true
           }
         })
-        authors.push({id: 0, title: this.$str.name_unknown, dynasty: item.id, is_author: true})
         item.children = authors
       })
     })
@@ -53,7 +51,7 @@ export default {
     selectDynasty: function (item) {
       if (item.length > 0) {
         if (item[0].is_author) {
-          this.$emit('selectAuthor', item[0].id, item[0].title, item[0].dynasty)
+          this.$emit('selectAuthor', item[0].id, item[0].dynasty, item[0].title)
         }
       }
     }
@@ -62,7 +60,7 @@ export default {
 </script>
 <style lang="less" scoped>
 .category {
-  height: calc(100vh - 48px * 2 - 12px * 2 - 2px);
   overflow-y: auto;
+  padding: 12px 24px;
 }
 </style>

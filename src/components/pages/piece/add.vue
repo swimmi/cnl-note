@@ -33,10 +33,6 @@
     <FormItem :label="$str.lock" prop="locked">
       <Switch v-model="piece.locked" size="large"/>
     </FormItem>
-    <FormItem>
-        <Button type="primary" @click="submit" :disabled="cannotEdit">{{ cannotEdit ? $str.locked : $str.submit }}</Button>
-        <Button style="margin-left: 8px" @click="$bus.emit('back')">{{ $str.back }}</Button>
-    </FormItem>
   </Form>
 </template>
 <script>

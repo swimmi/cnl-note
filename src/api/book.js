@@ -19,4 +19,12 @@ export const getBook = async function (params) {
 export const allBook = async function () {
   return (await api.get('/book/all')).data
 }
-
+export const getBookContent = async function (params) {
+  return (await api.post('/book/content', params)).data
+}
+export const getAuthorBooks = async function (params) {
+  return (await api.post('/book/author', params)).data
+}
+export const getCategoryBooks = async function (params) {
+  return (await api.post('/book/category', params)).data
+}

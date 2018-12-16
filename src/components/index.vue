@@ -1,134 +1,115 @@
 <template>
 <div class="layout">
-  <Layout v-if="!isReadMode" class="layout-main-mode">
-    <Sider class="sider" width="300">
-      <Menu width="auto" active-name="recent_read" :open-names="['recent']" accordion class="menu" @on-select="action">
-        <Submenu name="recent">
-            <template slot="title">
-              {{ $str.recent }}
-            </template>
-            <MenuItem name="recent_read"><span>{{ $str.read }}</span></MenuItem>
-            <MenuItem name="recent_add"><span>{{ $str.add }}</span></MenuItem>
-        </Submenu>
-        <Submenu name="add">
-            <template slot="title">
-              {{ $str.add_all }}
-            </template>
-            <MenuItem name="add_author_drawer"><span>{{ $str.add_author }}</span></MenuItem>
-            <MenuItem name="add_piece_drawer"><span>{{ $str.add_piece }}</span></MenuItem>
-            <MenuItem name="add_book_drawer"><span>{{ $str.add_book }}</span></MenuItem>
-            <MenuItem name="collect_book_drawer"><span>{{ $str.collect_book }}</span></MenuItem>
-        </Submenu>
-        <Submenu name="search">
-            <template slot="title">
-              {{ $str.search }}
-            </template>
-            <MenuItem name="search_piece_drawer"><span>{{ $str.piece }}</span></MenuItem>
-            <MenuItem name="search_book_drawer"><span>{{ $str.book }}</span></MenuItem>
-            <MenuItem name="search_author_drawer"><span>{{ $str.author }}</span></MenuItem>
-        </Submenu>
-        <dash-board class="dashboard"></dash-board>
-      </Menu>
+  <div v-if="isReadMode" class="layout-read-mode animated zoomInUp">
+    <piece-view :id="readBookId == ''?viewPieceId:readBookId" :isBook="readBookId != ''" :readMode="true"></piece-view>
+  </div>
+  <Layout v-else class="layout-main-mode">
+    <Sider class="sider" width="240">
+      <Tabs class="sider-tabs">
+        <TabPane icon="ios-book-outline" name="menu">
+            <Menu width="auto" active-name="recent_read" :open-names="['recent']" accordion class="menu" @on-select="action">
+              <Submenu name="recent">
+                  <template slot="title">
+                    {{ $str.recent }}
+                  </template>
+                  <MenuItem name="recent_read"><span>{{ $str.read }}</span></MenuItem>
+                  <MenuItem name="recent_add"><span>{{ $str.add }}</span></MenuItem>
+              </Submenu>
+              <Submenu name="add">
+                  <template slot="title">
+                    {{ $str.add_all }}
+                  </template>
+                  <MenuItem name="add_author_drawer"><span>{{ $str.add_author }}</span></MenuItem>
+                  <MenuItem name="add_piece_drawer"><span>{{ $str.add_piece }}</span></MenuItem>
+                  <MenuItem name="add_book_drawer"><span>{{ $str.add_book }}</span></MenuItem>
+                  <MenuItem name="collect_book_drawer"><span>{{ $str.collect_book }}</span></MenuItem>
+              </Submenu>
+              <Submenu name="search">
+                  <template slot="title">
+                    {{ $str.search }}
+                  </template>
+                  <MenuItem name="search_piece_drawer"><span>{{ $str.piece }}</span></MenuItem>
+                  <MenuItem name="search_book_drawer"><span>{{ $str.book }}</span></MenuItem>
+                  <MenuItem name="search_author_drawer"><span>{{ $str.author }}</span></MenuItem>
+              </Submenu>
+            </Menu>
+        </TabPane>
+        <TabPane icon="ios-navigate-outline" name="index">
+          <index-category @selectCategory="showCategoryBooks" @selectAuthor="showAuthorBooks"></index-category>
+        </TabPane>
+        <TabPane icon="ios-bookmark-outline" name="bookmark">
+        </TabPane>
+        <TabPane icon="ios-heart-outline" name="favorite">
+        </TabPane>
+      </Tabs>
+      <dash-board class="dashboard"></dash-board>
     </Sider>
     <Content class="content">
-      <Row>
-        <Col span="8" class="content-left">
-          <piece-list v-if="resultList != null" :list="resultList"></piece-list>
-        </Col>
-        <Col span="16" class="content-right">
-          <Spin size="large" class="center-parent" v-if="loadingPiece"></Spin>
-          <piece-view v-else :piece="selectedPiece" class="content-piece animated bounceInLeft"></piece-view>
-          <div class="sider-switch">
-            <Switch v-model="showCategory" size="large">
-              <span slot="open">{{ showIndex ? '索引':'目录' }}</span>
-              <span slot="close">{{ showIndex ? '索引':'目录' }}</span>
-            </Switch><br/>
-            <Switch v-model="showBooks" size="large" :style="{marginTop: '8px'}">
-              <span slot="open">书籍</span>
-              <span slot="close">书籍</span>
-            </Switch>
-          </div>
-        </Col>
-      </Row>
+      <div class="content-left">
+        <list-view v-if="itemList != null" :list="itemList"></list-view>
+      </div>
+      <div class="content-right">
+        <Spin v-if="loadingContent"/>
+        <piece-view v-else :id="readBookId == ''?viewPieceId:readBookId" :isBook="readBookId != ''" class="content-piece animated bounceInLeft"></piece-view>
+      </div>
     </Content>
-    <div v-show="showCategory">
-      <Sider v-show="!showIndex" class="sider">
-        <Divider><span v-if="selectedBook !== null">{{ selectedBook.title + '-' }}</span>{{ $str.category }}</Divider>
-        <Tree :data="bookSeries" :load-data="loadSeries" @on-select-change="selectSeries"></Tree>
-        <div style="margin-top: 48px">
-          <Button long :loading="loadingPiece" v-show="selectedPieceId > 0" @click="viewPiece(selectedPieceId)">
-            <span v-if="!loadingPiece">{{ $str.read }}</span>
-            <span v-else>{{ $str.loading }}</span>
-          </Button>
-          <Button style="margin-top: 8px" long @click="showIndex = true; selectedBook = null">{{ $str.back }}</Button>
-        </div>
-      </Sider>
-      <Sider v-show="showIndex" class="sider">
-        <index-category @selectCategory="showCategoryBooks" @selectAuthor="showAuthorBooks"></index-category>
-      </Sider>
-    </div>
-    <Sider v-show="showBooks" class="sider">
-      <Divider><span v-if="selectedCategory !== ''">{{ selectedCategory + '-' }}</span>{{ $str.book }}</Divider>
-      <book-item
-        v-for="(item, index) in bookList"
-        :key="index"
-        :book="item"
-        @click.native="selectBook(item)">
-      </book-item>
-    </Sider>
-    <Drawer ref="drawer" placement="left" :closable="false" v-model="showDrawer" :width="drawerWidth" @on-close="back" class="drawer">
-      <Divider>{{ drawerTitle }}</Divider>
-      <section v-if="actionName === 'add_author_drawer'"><add-author></add-author></section>
-      <section v-else-if="actionName === 'add_book_drawer'"><add-book></add-book></section>
-      <section v-else-if="actionName === 'collect_book_drawer'"><collect-book></collect-book></section>
-      <section v-else-if="actionName === 'add_piece_drawer' || actionName === 'modify_piece'"><piece-add :id="actionName === 'modify_piece' ? pieceToDo : ''"></piece-add></section>
-      <section v-else-if="actionName === 'edit_piece_drawer'"><piece-edit :id="pieceToDo"></piece-edit></section>
-      <section v-else-if="actionName === 'relate_piece'"><piece-relate :id="pieceToDo"></piece-relate></section>
-      <section v-else-if="actionName === 'search_piece_drawer'"><piece-search @result="returnResult"></piece-search></section>
+    <Drawer ref="drawer" placement="left" :closable="false" :maskClosable="false" v-model="showDrawer" :width="drawerWidth" @on-close="back" class="drawer" :styles="drawerStyles">
+      <div class="drawer-header">
+        <div class="drawer-back" type="primary" @click="back"><Icon type="md-close" size="24" /></div>
+        <span class="drawer-title">{{ drawerTitle }}</span>
+        <div class="drawer-submit" type="primary" @click="submit"><Icon type="md-checkmark" size="24" /></div>
+      </div>
+      <div class="drawer-content">
+        <author-add v-if="actionName === 'add_author_drawer'" :ref="actionName"></author-add>
+        <book-add v-else-if="actionName === 'add_book_drawer'" :ref="actionName"></book-add>
+        <book-collect v-else-if="actionName === 'collect_book_drawer'" :ref="actionName"></book-collect>
+        <piece-add v-else-if="['add_piece_drawer', 'modify_piece_drawer'].indexOf(actionName) != -1" :ref="actionName" :id="actionName === 'modify_piece_drawer' ? pieceToDo : ''"></piece-add>
+        <piece-edit v-else-if="actionName === 'edit_piece_drawer'" :ref="actionName" :id="pieceToDo"></piece-edit>
+        <piece-relate v-else-if="actionName === 'relate_piece_drawer'" :ref="actionName" :id="pieceToDo"></piece-relate>
+        <piece-record v-else-if="actionName === 'record_piece_drawer'" :ref="actionName" :id="pieceToDo"></piece-record>
+        <piece-search v-else-if="actionName === 'search_piece_drawer'" :ref="actionName"></piece-search>
+      </div>
     </Drawer>
   </Layout>
-  <div v-else class="layout-read-mode animated zoomInUp">
-      <piece-view :piece="selectedPiece" :readMode="true"></piece-view>
-  </div>
 </div>
 </template>
 <script>
-import AddAuthor from '@/components/pages/author/add'
-import AddBook from '@/components/pages/book/add'
-import CollectBook from '@/components/pages/book/collect'
-// 篇章操作相关组件
+// 相关组件
+import AuthorAdd from '@/components/pages/author/add'
+import BookAdd from '@/components/pages/book/add'
+import BookCollect from '@/components/pages/book/collect'
 import PieceAdd from '@/components/pages/piece/add'
 import PieceEdit from '@/components/pages/piece/edit'
 import PieceSearch from '@/components/pages/piece/search'
 import PieceRelate from '@/components/pages/piece/relate'
+import PieceRecord from '@/components/pages/piece/record'
 import PieceView from '@/components/pages/piece/view'
-
 import IndexCategory from '@/components/pages/category'
-import PieceList from '@/components/widgets/list/piece'
-import BookItem from '@/components/widgets/item/book'
-import DashBoard from '@/components/widgets/DashBoard'
-
+import ListView from '@/components/widgets/listview'
+import DashBoard from '@/components/widgets/dashboard'
+// api方法
 import { getPiece, getPieceRecent } from '@/api/piece'
+import { getBook, getCategoryBooks, getAuthorBooks } from '@/api/book'
 export default {
   components: {
-    AddBook,                // 添加书籍
-    AddAuthor,              // 添加作者
-    CollectBook,            // 编撰书籍
+    BookAdd,                // 添加书籍
+    BookCollect,            // 编撰书籍
+    AuthorAdd,              // 添加作者
     IndexCategory,          // 目录索引
-    PieceList,              // 搜索结果
     PieceAdd,               // 添加篇章
     PieceEdit,              // 编辑篇章
     PieceSearch,            // 搜索篇章
     PieceRelate,            // 篇章相关
+    PieceRecord,            // 篇章朗读
     PieceView,              // 查看篇章
-    BookItem,
-    DashBoard
+    ListView,               // 项目列表
+    DashBoard               // 面板数据
   },
   inject: ['reload'],
   props: {
     piece: {
       type: Object,
-      required: false
+      required: true
     }
   },
   data () {
@@ -136,22 +117,29 @@ export default {
       title: '吉光片羽',     // 主标题
       subtitle: '国学笔记',  // 副标题
       actionName: 'index',  // 触发drawer操作名称
-      resultName: '',       // 显示结果类型名称
-      resultList: null,       // 显示结果列表
+      itemList: null,       // item列表
       showDrawer: false,    // 是否显示drawer
+      showMenu: true,       // 是否显示菜单栏
       showIndex: true,      // 是否显示分类索引
       showCategory: false,  // 是否显示右侧目录索引
       showBooks: false,     // 是否现在右侧书籍列表
-      loadingPiece: true,   // 是否正在加载篇章
+      loadingContent: true, // 是否正在加载内容
       bookList: [],         // 当前展示的书籍列表
       selectedBook: null,   // 当前选中的书籍
       selectedCategory: '', // 当前选中的索引目录
-      selectedPieceId: this.piece._id,   // 当前选中的篇章id
-      selectedPiece: this.piece,  // 当前选中的篇章
-      drawerTitle: '',
+      viewPieceId: this.piece._id,// 当前观看的篇章
+      readBookId: '',        // 当前阅读的书籍id
+      drawerTitle: '',      // drawer标题
       bookSeries: [],       // 书籍卷册
       pieceToDo: '',        // 待操作的篇章
-      isReadMode: true     // 阅读模式
+      isReadMode: true,     // 阅读模式
+      drawerStyles: {
+        padding: '0px',
+        background: 'url(static/images/drawer_bg.jpg)',
+        backgroundPosition: '50%',
+        backgroundSize: 'cover',
+        animation: 'bgFloatH 60s ease-in-out infinite'
+      }
     }
   },
   mounted () {
@@ -161,7 +149,7 @@ export default {
   },
   computed: {
     drawerWidth: function() {
-      if (['add_piece_drawer', 'edit_piece_drawer', 'relate_piece_drawer', 'collect_book_drawer'].indexOf(this.actionName) > -1) {
+      if (['add_piece_drawer', 'edit_piece_drawer', 'relate_piece_drawer', 'collect_book_drawer', 'record_piece_drawer'].indexOf(this.actionName) > -1) {
         return 600
       }
       return 400
@@ -169,28 +157,29 @@ export default {
   },
   methods: {
     init () {
-      this.$bus.on('actionPiece', this.actionPiece)
       this.$bus.on('back', this.back)
       this.$bus.on('reload', this.reload)
       this.$bus.on('refresh', this.refresh)
+      this.$bus.on('showList', this.showList)
       this.$bus.on('changeMode', this.changeMode)
+      this.$bus.on('actionBook', this.actionBook)
+      this.$bus.on('actionPiece', this.actionPiece)
       this.loadPieceRecent(0)
       this.initCategory()
-      this.selectedPiece = this.piece
-      this.selectedPieceId = this.piece._id
-      this.loadingPiece = false
+      this.loadingContent = false
       document.onkeyup = (event) => {
         let e = event || window.event || arguments.callee.caller.arguments[0]
-        if (e && e.keyCode == 32 && event.target.tagName == 'BODY') {
+        if (e && e.keyCode == 32 && event.target.tagName == 'BODY' && !this.showDrawer) {
           this.changeMode()
         }
       }
     },
     loadPieceRecent (val) {
       getPieceRecent({'type': val}).then(res => {
-        this.resultList = {
-          data: res,
-          type: val
+        this.itemList = {
+          title: this.$str.recent + [this.$str.read, this.$str.add][val],
+          type: 'piece',
+          data: res
         }
       })
     },
@@ -216,7 +205,8 @@ export default {
         'book': this.$str.book,
         'collect': this.$str.collect,
         'piece': this.$str.piece,
-        'relate': this.$str.relate
+        'relate': this.$str.relate,
+        'record': this.$str.record
       }
       if (name.indexOf('drawer') > -1) {
         const names = name.split('_')
@@ -235,49 +225,27 @@ export default {
       }
     },
     showCategoryBooks (category, title) {
-      this.selectedCategory = title
-      this.$http.post('/api/getCategoryBooks', {
+      getCategoryBooks({
         category: category
+      }).then(res => {
+          this.itemList = {
+            title: title,
+            type: 'book',
+            data: res
+        }
       })
-        .then(response => {
-          this.bookList = response.data
-        })
-        .catch(error => {
-          console.log(error)
-        })
     },
-    showAuthorBooks (author, title, dynasty) {
-      this.selectedCategory = title
-      this.$http.post('/api/getAuthorBooks', {
+    showAuthorBooks (author, dynasty, title) {
+      getAuthorBooks({
         author: author,
         dynasty: dynasty
-      })
-        .then(response => {
-          this.bookList = response.data
-        })
-        .catch(error => {
-          console.log(error)
-        })
-        .finally(() => { })
-    },
-    selectBook (book) {
-      this.selectedBook = book
-      this.showIndex = false
-      this.initCategory()
-    },
-    selectSeries: function (item) {
-      if (item.length > 0) {
-        if (!item[0].hasOwnProperty('loading')) {
-          this.selectedPieceId = item[0].id
-        } else {
-          this.selectedPieceId = 0
+      }).then(res => {
+        this.itemList = {
+          title: title,
+          type: 'book',
+          data: res
         }
-      } else {
-        this.selectedPieceId = 0
-      }
-    },
-    updateSeries () {
-      this.initCategory()
+      })
     },
     loadSeries (item, callback) {
       setTimeout(() => {
@@ -330,38 +298,55 @@ export default {
         })
         .finally(() => {})
     },
-    viewPiece (id) {
-      this.loadingPiece = true
-      getPiece({id: id}).then(res => {
-        this.selectedPiece = res
-        this.loadingPiece = false
-      })
+    showPiece (id) {
+      this.loadingContent = true
+      this.readBookId = ''
+      setTimeout(() => {
+        this.viewPieceId = id
+        this.loadingContent = false
+      }, 300)
     },
     // 对篇章进行各项操作
     actionPiece (name, id) {
       this.pieceToDo = id
       switch (name) {
         case 'view':
-          this.viewPiece(id)
+          this.showPiece(id)
           break
         case 'modify':
         case 'edit':
         case 'relate':
-          this.action(name + '_piece')
+        case 'record':
+          this.action(name + '_piece_drawer')
           break
       }
     },
-    returnResult (name, list) {
-      this.resultName = name
-      this.resultList = {
+    // 对书籍进行各项操作
+    actionBook (name, id) {
+      switch (name) {
+        case 'read':
+          this.loadingContent = true
+          setTimeout(() => {
+            this.readBookId = id
+            this.loadingContent = false
+          }, 300)
+          break
+      }
+    },
+    showList (title, type, list) {
+      this.itemList = {
+        title: title,
+        type: type,
         data: list
       }
-      this.showDrawer = false
     },
     refresh (id) {
-      if (id == this.selectedPieceId) {
-        this.viewPiece(this.selectedPieceId)
+      if (id == this.viewPieceId) {
+        this.showPiece(id)
       }
+    },
+    submit () {
+      this.$refs[this.actionName].submit()
     },
     changeMode () {
       this.isReadMode = !this.isReadMode
@@ -386,23 +371,32 @@ export default {
   }
 }
 .sider {
-  height: 100vh;
   background: transparent;
-  padding: 12px;
+}
+.sider-tabs {
+  width: 90%;
+  margin: 0 auto;
+  height: 100%;
+  padding: 9px 0px;
 }
 .layout {
   width: 100%;
   height: 100vh;
 }
 .layout-main-mode {
+  width: 100%;
   height: 100vh;
   background: transparent;
   .content {
+    display: flex;
     .content-left {
+      display: inline-block;
+      width: 360px;
       height: 100vh;
       z-index: 3;
     }
     .content-right {
+      width: calc(100% - 360px);
       height: 100vh;
       display: -webkit-flex;
       display: flex;
@@ -447,8 +441,5 @@ export default {
   &:after {
     background: @primary-color!important;
   }
-}
-.drawer {
-  background: transparent;
 }
 </style>

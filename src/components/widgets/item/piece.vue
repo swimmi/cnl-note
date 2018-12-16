@@ -5,8 +5,8 @@
         <Icon v-if="hasBookmark" type="ios-bookmark" size="20" color="#f3515188"/>
       </div>
       <div class="info-right">
-        <span v-show="type == 0"><Time :time="this.piece.lastViewAt"/> <Icon type="ios-book-outline" size="16" color="#aaa"/></span>
-        <span v-show="type == 1"><Time :time="this.piece.createdAt"/> <Icon type="ios-add-circle-outline" size="16" color="#aaa"/></span>
+        <span v-if="this.piece.lastViewAt"><Time :time="this.piece.lastViewAt"/> <Icon type="ios-book-outline" size="16" color="#aaa"/></span>
+        <span v-else>{{ $str.not_yet + $str.read }}</span>
       </div>
     </div>
     <div class="piece-header">
@@ -18,9 +18,10 @@
       <div class="menu-item"><span @click="action('view')">{{ $str.view }}</span></div>
       <div class="menu-item"><span @click="action('modify')">{{ $str.modify }}</span></div>
       <div class="menu-item" @mouseleave="menuShow = false">
-        <span @click="menuShow = !menuShow">{{ $str.piece }}</span>
+        <span @mouseover="menuShow = !menuShow">{{ $str.piece }}</span>
         <transition enter-active-class="flipInY" leave-active-class="flipOutY">
           <div v-show="menuShow" class="submenu animated">
+            <span class="submenu-item" @click="action('record')">{{ $str.record }}</span>
             <span class="submenu-item" @click="action('edit')">{{ $str.edit }}</span>
             <span class="submenu-item" @click="action('relate')">{{ $str.relate }}</span>
           </div>
@@ -65,7 +66,7 @@ export default {
   position: relative;
   display: block;
   text-align: center;
-  width: 80%;
+  width: 90%;
   margin: 12px auto;
   border: none;
   background: transparent;

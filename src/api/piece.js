@@ -22,8 +22,11 @@ export const addBookmark = async function (params) {
 export const removeBookmark = async function (params) {
   return (await api.post('piece/bookmark/remove', params)).data
 }
-export const recordPieceView = async function (params) {
-  return (await api.post('/piece/view/record', params)).data
+export const savePieceHistory = async function (params) {
+  return (await api.post('/piece/history/save', params)).data
+}
+export const recordPiece = async function (params) {
+  return (await api.post('/upload', params)).data
 }
 // 查询类
 export const getPiece = async function (params) {

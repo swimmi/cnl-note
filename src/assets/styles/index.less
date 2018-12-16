@@ -1,7 +1,7 @@
-@primary-color: #622da8d2;
+@primary-color: #b45903ef;
 @paper-bg: #f0fcfba2;
 @card-bg: #ededf198;
-@white-bg: #ffffffbe;
+@white-bg: #ffffff88;
 
 // text-color
 @text-black: #222;
@@ -28,6 +28,7 @@
 
 @title-height: 32px;
 @subtitle-height: 24px;
+@drawer-header-height: 64px;
 
 @v-title-width: 16px;
 
@@ -58,6 +59,46 @@
 .icon-btn-disabled {
   border: 4px @card-bg double;
 }
+.drawer {
+  .drawer-header {
+    height: 64px;
+    line-height: 64px;
+    background: lighten(@primary-color, 10%);
+    text-align: center;
+    .drawer-title {
+      margin: 0 auto;
+      width: calc(100% - 68px);
+      color: white;
+      font-size: @title-size;
+    }
+    div {
+      height: 64px;
+      width: 64px;
+      color: white;
+      text-align: center;
+      cursor: pointer;
+      transition: all 1s;
+      &:hover {
+        background: darken(@primary-color, 5%);
+      }
+    }
+    .drawer-back {
+      float: left;
+    }
+    .drawer-submit {
+      float: right;
+    }
+  }
+  .drawer-content {
+    height: calc(100vh - 64px);
+    padding: 24px;
+    overflow-y: auto;
+    input, textarea, button {
+      background: @card-bg!important;
+      color: @text-black;
+    }
+  }
+}
 .v-title {
   display: block;
   width: @v-title-width;
@@ -74,18 +115,40 @@
   left: 50%;
   transform: translate(-50%, 0%);
 }
+.center-vertical {
+  position: absolute;
+  top: 50%;
+  transform: translate(0%, -50%);
+}
 .center-parent {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
 }
-.drawer-form {
-  padding: 24px;
-}
 .float-left {
   float: left;
 }
 .float-right {
   float: right;
+}
+.blur(@px) {
+  -webkit-filter: blur(@px);
+  -moz-filter: blur(@px);
+  -o-filter: blur(@px);
+  -ms-filter: blur(@px);
+  filter: blur(@px);
+}
+
+@keyframes bgFloat {
+  0% {background-position: 0% 0%}
+  25% {background-position: 100% 0%}
+  50% {background-position: 100% 100%}
+  75% {background-position: 0% 100%}
+  100% {background-position: 0% 0%}
+}
+@keyframes bgFloatH {
+  0% {background-position: 0% 50%}
+  50% {background-position: 100% 50%}
+  100% {background-position: 0% 50%}
 }
