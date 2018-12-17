@@ -86,7 +86,8 @@ var simple = {
   recent: '最近',
   not_yet: '还未',
   collect_book_tip: '请选择要编录的书籍',
-  template_tip: '标题模板（如\'第n章\')'
+  template_tip: '标题模板（如\'第n章\')',
+  power_tip: '云想衣裳花想容···'
 }
 var traditional = {
 }

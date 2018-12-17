@@ -6,3 +6,6 @@ export const dashboard = async function () {
 export const saveHistory = async function (params) {
   return (await api.post('/util/history', params)).data
 }
+export const pairText = async function (params) {
+  return (await api.post('/util/pairtext', params)).data
+}

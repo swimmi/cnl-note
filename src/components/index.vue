@@ -3,7 +3,7 @@
   <div v-if="isReadMode" class="layout-read-mode animated zoomInUp">
     <piece-view :id="readBookId == ''?viewPieceId:readBookId" :isBook="readBookId != ''" :readMode="true"></piece-view>
   </div>
-  <Layout v-else class="layout-main-mode">
+  <Layout v-else class="layout-main-mode animated fadeInLeft">
     <Sider class="sider" width="240">
       <div class="sider-title"><span>{{ title }}</span></div>
       <Tabs class="sider-tabs" >

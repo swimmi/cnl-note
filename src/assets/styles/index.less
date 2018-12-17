@@ -1,7 +1,8 @@
 @primary-color: #029286ef;
 @paper-bg: #f0fcfba2;
-@card-bg: #e7e7eca9;
+@card-bg: #e5f1f1a9;
 @white-bg: #ffffff8a;
+@mask-bg: #0a0a0af8;
 
 // text-color
 @text-black: #222;
@@ -16,10 +17,12 @@
 @stamp-color: #ff0000;
 
 // font-size
-@font-small: 12px;
+@font-small: 14px;
 @font-middle: 16px;
-@font-big: 20px;
-@font-large: 24px;
+@font-big: 18px;
+@font-large: 20px;
+
+@font-power: 28px;
 
 @title-size: 18px;
 @subtitle-size: 16px;
@@ -112,6 +115,12 @@
   width: @v-title-width;
   line-height: @v-title-width;
   font-size: @v-title-width;
+}
+.v-power-text {
+  display: block;
+  width: @font-power;
+  line-height: @font-power * 1.2;
+  font-size: @font-power;
 }
 .center-title {
   width: 100%;

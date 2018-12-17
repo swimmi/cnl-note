@@ -1,9 +1,10 @@
 var db = require('./db')
+var utils = require('./utils')
 var express = require('express')
 var router = express.Router()
 var mongoose = require('mongoose')
 var models = require('./models')
-var fileUpload = require('express-fileupload');
+var fileUpload = require('express-fileupload')
 router.use(fileUpload({createParentPath: true}))
 
 // 連接數據庫
@@ -251,6 +252,21 @@ router.get('/util/dashboard', async (req, res) => {
     }
   })
   res.send(counts)
+})
+router.post('/util/pairtext', function(req, res) {
+  var text = req.body.text
+  const reg = new RegExp(text)
+  models.Piece.
+    findOne({content: {$regex: reg}}).
+    exec((err, data) => {
+      if (data) {
+        const content = data.content
+        const str = utils.pairText(content, text)
+        res.send(err?err:str)
+      } else {
+        res.send(err?err:'')
+      }
+    })
 })
 
 router.get('/:dir/:id/:name', function(req, res) {
