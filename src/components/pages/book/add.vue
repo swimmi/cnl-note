@@ -55,9 +55,15 @@
 </template>
 <script>
 import data from '@/store/data.js'
-import { addBook } from '@/api/book'
-import { allAuthor } from '@/api/author'
+import { addBook, updateBook, getBook } from '@/api/book'
+import { allAuthor, getAuthor } from '@/api/author'
 export default {
+  props: {
+    id: {
+      type: String,
+      require: false
+    }
+  },
   data () {
     return {
       book: {
@@ -89,6 +95,13 @@ export default {
   },
   methods: {
     init () {
+      if (this.id != '') {
+        setTimeout(() => {
+          getBook({id: this.id}).then(res => {
+            this.book = res
+          })
+        }, 300)
+      }
       // 获取作者列表以供选择
       allAuthor().then(res => {
         this.allAuthors = res.map(item =>  {
@@ -130,9 +143,16 @@ export default {
     submit () {
       this.$refs['book'].validate((valid) => {
         if (valid) {
-          addBook({book: this.book}).then(res => {
-            this.$bus.emit('back')
-          })
+          if (this.id == '') {
+            addBook({book: this.book}).then(res => {
+              this.$refs.book.resetFields()
+            })
+          } else {
+            updateBook({book: this.book}).then(res => {
+              this.$bus.emit('refresh')
+              this.$refs.book.resetFields()
+            })
+          }
           this.$Message.success(this.$str.submit)
         }
       })

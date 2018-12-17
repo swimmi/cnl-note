@@ -44,7 +44,13 @@ export const getPieceContent = async function (params) {
 export const getPieceRandom = async function (params) {
   return (await api.post('/piece/random', params)).data
 }
-export const getPieceRecent = async function (params) {
+export const getAuthorPieces = async function (params) {
+  return (await api.post('/piece/author', params)).data
+}
+export const getCategoryPieces = async function (params) {
+  return (await api.post('/piece/category', params)).data
+}
+export const getRecentPieces = async function (params) {
   return (await api.post('/piece/recent', params)).data
 }
 

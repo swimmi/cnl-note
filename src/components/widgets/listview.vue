@@ -1,22 +1,27 @@
 <template>
   <div class="list-view">
     <div class="list-header">
-      <div class="list-title">{{ list.title }}</div>
+      <div class="list-title"><span>{{ data.title }}</span></div>
+      <div class="list-tabs">
+        <span class="title-piece" :class="{'title-on': item == 0}" @click="item = 0">{{ $str.piece }}</span>
+        <span class="title-book" :class="{'title-on': item == 1}" @click="item = 1">{{ $str.book }}</span>
+        <span class="list-tabs-indicator" :class="selectedTab"></span>
+      </div>
     </div>
-    <Scroll class="list-scroll" height="100%">
-      <section v-if="list.type == 'piece'">
+    <Scroll :on-reach-edge="handleData" :distance-to-edge="10" class="list-scroll" :height="scrollHeight">
+      <section v-if="item == 0">
         <piece-item
-        v-for="(item, index) in list.data"
+        v-for="(item, index) in pieces"
         :key="index"
         :piece="item"
-        class="animated bounceInLeft"></piece-item>
+        class="animated zoomInLeft"></piece-item>
       </section>
-      <section v-else-if="list.type == 'book'">
+      <section v-if="item == 1">
         <book-item
-        v-for="(item, index) in list.data"
+        v-for="(item, index) in books"
         :key="index"
         :book="item"
-        class="animated bounceInLeft"></book-item>
+        class="animated zoomInLeft"></book-item>
       </section>
     </Scroll>
   </div>
@@ -24,6 +29,8 @@
 <script>
 import PieceItem from '@/components/widgets/item/piece'
 import BookItem from '@/components/widgets/item/book'
+import { getRecentPieces, getAuthorPieces, getCategoryPieces, searchPiece } from '@/api/piece'
+import { getRecentBooks, getAuthorBooks, getCategoryBooks, searchBook } from '@/api/book'
 export default {
   name: 'list-view',
   components: {
@@ -31,16 +38,84 @@ export default {
     BookItem
   },
   props: {
-    list: {
+    data: {
       type: Object,
       required: true
     }
   },
   data () {
     return {
+      item: 0,          // 0: piece, 1: book
+      pieces: [],
+      books: [],
+      pages: [0, 0],
+      limit: 10,
+      scrollHeight: 0,
+    }
+  },
+  computed: {
+    selectedTab: function () {
+      return this.item == 0 ? 'select-first': 'select-second'
     }
   },
   mounted () {
+    this.scrollHeight = document.documentElement.clientHeight - 87
+    this.loadData(0)
+    this.loadData(1)
+  },
+  methods: {
+    fetch (val, methods, params) {
+      methods[val](params).then(res => {
+        res.forEach(item => {
+          if (val == 0) {
+            this.pieces.push(item)
+          } else {
+            this.books.push(item)
+          }
+        })
+      })
+    },
+    loadData (val) {
+      var params = this.data.params || null
+      params.page = this.pages[val]
+      params.limit = this.limit
+      const type = this.data.type
+      switch (type) {
+        case 'recent-items':
+          this.fetch(val, [getRecentPieces, getRecentBooks], params)
+          break
+        case 'author-items':
+          this.fetch(val, [getAuthorPieces, getAuthorBooks], params)
+          break
+        case 'category-items':
+          this.fetch(val, [getCategoryPieces, getCategoryBooks], params)
+          break
+        case 'search-items':
+          this.fetch(val, [searchPiece, searchBook], params)
+          break
+      }
+    },
+    handleData (dir) {
+      return new Promise(resolve => {
+        setTimeout(() => {
+          if (dir > 0) {
+            this.pages[this.item] = 0
+            if (this.item == 0) {
+              this.pieces = []
+            }
+            if (this.item == 1) {
+              this.books = []
+            }
+            this.loadData(this.item)
+            resolve()
+          } else {
+            this.pages[this.item] ++
+            this.loadData(this.item)
+            resolve()
+          }
+        }, 1000)
+      })
+    }
   }
 }
 </script>
@@ -48,25 +123,60 @@ export default {
 .list-view {
   height: 100vh;
   position: relative;
-  background: @card-bg;
   overflow-y: auto;
   overflow-x: hidden;
   .list-header {
-    height: 48px;
-    width: 90%;
     margin: 0px auto;
     text-align: center;
     border-bottom: 1px @white-bg solid;
     .list-title {
-      line-height: 48px;
+      line-height: @list-header-height;
+      font-size: @title-size;
+      background: @card-bg;
+    }
+    .list-tabs {
+      position: relative;
+      display: flex;
+      line-height: 38px;
       color: @text-vice;
       font-size: @subtitle-size;
       letter-spacing: 4px;
+      span {
+        flex: 1;
+        cursor: pointer;
+        background: @card-bg;
+      }
+      .title-on {
+        color: @primary-color;
+      }
+      .title-author {
+        color: @text-black;
+        background: transparent;
+      }
+      .title-book, .title-piece {
+        transition: all 1s;
+      }
+      .list-tabs-indicator {
+        position: absolute;
+        bottom: 0px;
+        display: block;
+        width: 60px;
+        height: 2px;
+        background-color: @primary-color;
+        transition: all .5s ease-in-out;
+      }
+      .select-first {
+        transform: translateX(56px);
+      }
+      .select-second {
+        transform: translateX(238px);
+      }
     }
   }
   .list-scroll {
-    width: calc(100% + 36px);
-    height: calc(100vh - 48px);
+    width: calc(100% + @scrollbar-width);
+    background: @card-bg;
+    overflow-x: hidden;
     overflow-y: auto;
   }
 }

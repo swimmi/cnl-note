@@ -45,6 +45,15 @@ router.post('/piece/search', (req, res) => {
     sort({'updatedAt': -1}).
     exec((err, data) => {res.send(err?err:data)})
 })
+router.post('/piece/author', (req, res) => {
+  const author = req.body.author
+  const period = req.body.dynasty
+  models.Piece.find({'author': author, 'period': period}, (err, data) => {res.send(err?err:data)})
+})
+router.post('/piece/category', (req, res) => {
+  const category = req.body.category
+  models.Piece.find({'category': category}, (err, data) => {res.send(err?err:data)})
+})
 router.post('/piece/random', (req, res) => {
   var size = 1
   if (req.body.size) {
@@ -98,20 +107,26 @@ router.post('/piece/history/save', (req, res) => {
 })
 // 最近篇章
 router.post('/piece/recent', (req, res) => {
-  const type = req.body.type
-  switch (type) {
-    case 0:
+  const page = req.body.page || 0
+  const limit = req.body.limit || 10
+  const orderBy = req.body.orderBy || 'create'
+  switch (orderBy) {
+    case 'view':
       models.Piece.
         find({'lastViewAt': { $exists: true }}).
         populate({path: 'author', select: 'name.full'}).
         sort({'lastViewAt': -1}).
+        skip(page * limit).
+        limit(limit).
         exec((err, data) => {res.send(err?err:data)})
       break
-    case 1:
+    case 'create':
       models.Piece.
         find({'createdAt': { $exists: true }}).
         populate({path: 'author', select: 'name.full'}).
         sort({'createdAt': -1}).
+        skip(page * limit).
+        limit(limit).
         exec((err, data) => {res.send(err?err:data)})
       break;
   }
@@ -124,6 +139,10 @@ router.post('/piece/record/upload', (req, res) => {
 /**
  * 作者
  */
+router.post('/author/get', (req, res) => {
+  const id = req.body.id
+  models.Author.findById(id, (err, data) => {res.send(err?err:data)})
+})
 router.post('/author/add', (req, res) => {
   var author = new models.Author(req.body.author)
   author.save((err, data) => {res.send(err?err:data)})
@@ -152,6 +171,15 @@ router.post('/book/get', (req, res) => {
 router.get('/book/all', (req, res) => {
   models.Book.find({}).select('_id title').exec((err, data) => {res.send(err?err:data)})
 })
+router.post('/book/search', (req, res) => {
+  const key = req.body.keyword
+  const reg = new RegExp(key)
+  models.Book.
+    find({$and: [{title: {$regex: reg}}]}).
+    populate({path: 'author', select: 'name.full'}).
+    sort({'updatedAt': -1}).
+    exec((err, data) => {res.send(err?err:data)})
+})
 router.post('/book/catalog/get', (req, res) => {
   const id = req.body.book
   models.Book.findById(id, {'catalog': 1}, (err, data) => {res.send(err?err:data)})
@@ -178,6 +206,29 @@ router.post('/book/author', (req, res) => {
 router.post('/book/category', (req, res) => {
   const category = req.body.category
   models.Book.find({'category': category}, (err, data) => {res.send(err?err:data)})
+})
+router.post('/book/recent', (req, res) => {
+  const orderBy = req.body.orderBy || 'create'
+  switch (orderBy) {
+    case 'view':
+      models.Book.
+        find({'lastViewAt': { $exists: true }}).
+        populate({path: 'author', select: 'name.full'}).
+        sort({'lastViewAt': -1}).
+        exec((err, data) => {res.send(err?err:data)})
+      break
+    case 'create':
+      models.Book.
+        find({'createdAt': { $exists: true }}).
+        populate({path: 'author', select: 'name.full'}).
+        sort({'createdAt': -1}).
+        exec((err, data) => {res.send(err?err:data)})
+      break;
+  }
+})
+router.post('/book/history/save', (req, res) => {
+  const id = req.body.id
+  models.Book.updateOne({_id: id}, {$set: {'lastViewAt': Date.now()}}, (err, data) => {res.send(err?err:data)})
 })
 
 /**

@@ -27,6 +27,19 @@
           :value="item.id">{{ item.title }}</Option>
       </Select>
     </FormItem>
+    <FormItem :label="$str.book_category" prop="category">
+      <Select v-model="piece.category" filterable>
+        <OptionGroup
+          v-for="(item, index) in categoryList"
+          :key="index"
+          :label="item.title">
+          <Option
+            v-for="(subItem, subIndex) in item.children"
+            :key="subIndex"
+            :value="subItem.id">{{ subItem.title }}</Option>
+        </OptionGroup>
+      </Select>
+    </FormItem>
     <FormItem :label="$str.content" prop="content">
         <Input v-model="piece.content" type="textarea" :autosize="{minRows: 8, maxRows: 12}" :placeholder="$str.input_tip" onpaste="return false;"></Input>
     </FormItem>
@@ -38,7 +51,7 @@
 <script>
 import data from '@/store/data'
 import { addPiece, updatePiece, getPiece } from '@/api/piece'
-import { allAuthor } from '@/api/author'
+import { allAuthor, getAuthor } from '@/api/author'
 export default {
   props: {
     id: {
@@ -66,6 +79,7 @@ export default {
       loadingAuthor: false,
       allAuthors: [],
       authorList: [],
+      categoryList: data.category,
       dynastyList: data.dynasty,
       errored: false,
       loading: true
@@ -76,16 +90,6 @@ export default {
   },
   methods: {
     init () {
-      // 获取作者列表以供选择
-      allAuthor().then(res => {
-        this.allAuthors = res.map(item =>  {
-          return {
-            value: item._id,
-            label: item.name.full
-          }
-        })
-        this.loading = false
-      })
       // 编辑状态下获取篇章信息
       if (this.id != '') {
         setTimeout(() => {
@@ -103,11 +107,20 @@ export default {
               if (this.piece.locked) {
                 this.cannotEdit = true
               }
-              this.loading = false
             }
           })
         }, 300)
       }
+      // 获取作者列表以供选择
+      allAuthor().then(res => {
+        this.allAuthors = res.map(item =>  {
+          return {
+            value: item._id,
+            label: item.name.full
+          }
+        })
+        this.loading = false
+      })
     },
     queryAuthors (query) {
       if (query !== '') {
@@ -126,6 +139,9 @@ export default {
           this.authorUnknown = true
         } else {
           this.authorUnknown = false
+          getAuthor({'id': this.piece.author}).then(res => {
+            this.piece.period = res.dynasty
+          })
         }
       }
     },

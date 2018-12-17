@@ -11,18 +11,18 @@
         @click="expandPage"/>
       <div class="page-control">
         <Icon
-          class="page-prev"
-          v-show="pageIndex > 0"
+          class="icon-btn"
+          :class="{'icon-btn-disabled': pageIndex == 0}"
           type="ios-arrow-up"
           size="24"
-          @click="pageIndex--" />
+          @click="if(pageIndex > 0) pageIndex--" />
         <span class="page-number v-title">{{ $util.parseNumber(pageIndex + 1) }}</span>
         <Icon
-          class="page-next"
-          v-show="pageIndex < pages.length - 1"
+          class="icon-btn"
+          :class="{'icon-btn-disabled': pageIndex == pages.length - 1}"
           type="ios-arrow-down"
           size="24"
-          @click="pageIndex++" />
+          @click="if(pageIndex < pages.length - 1) pageIndex++" />
       </div>
     </div>
     <div class="piece-content" :class="{'animated fadeIn': showPiece}">
@@ -56,7 +56,7 @@
 </template>
 <script>
 import { getPiece, getPieceRelate, addBookmark, removeBookmark, savePieceHistory } from '@/api/piece'
-import { getBookContent } from '@/api/book'
+import { getBookContent, saveBookHistory } from '@/api/book'
 export default {
   name: 'view-piece',
   props: {
@@ -139,15 +139,14 @@ export default {
     }
     if (this.isBook) {
       getBookContent({'book': this.id}).then(res => {
-        if (res) {
-          this.title = res.title
-          this.author = res.author.name.full
-          res.catalog.forEach(item => {
-            this.getItemContent(item)
-          })
-          this.contents[0] = this.srcContent
-          this.showContent()
-        }
+        this.title = res.title
+        this.author = res.author.name.full
+        res.catalog.forEach(item => {
+          this.getItemContent(item)
+        })
+        this.contents[0] = this.srcContent
+        this.showContent()
+        saveBookHistory({id: this.id})
       })
     } else {
       getPiece({'id': this.id}).then(res => {
@@ -164,9 +163,9 @@ export default {
         res.relates.forEach(item => {
           this.contents[item.type + 1] = item.content
         })
-        savePieceHistory({id: this.id})
         this.contents[0] = this.srcContent
         this.showContent()
+        savePieceHistory({id: this.id})
       })
     }
   },
@@ -443,12 +442,6 @@ export default {
     .page-control {
       position: absolute;
       bottom: 0px;
-      .page-prev {
-        .icon-btn();
-      }
-      .page-next {
-        .icon-btn();
-      }
       .page-number {
         display: block;
         margin: 12px auto;

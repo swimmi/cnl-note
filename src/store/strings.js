@@ -39,6 +39,7 @@ var simple = {
   prologue: '序跋',
   alias: '别名',
   catalog: '目录',
+  book_piece: '书篇',
   // 动词
   add: '添加',
   back: '返回',
@@ -60,8 +61,8 @@ var simple = {
   change: '更换',
   add_all: '著作',
   add_author: '集贤',
-  add_piece: '收篇',
-  add_book: '存书',
+  add_piece: '纳篇',
+  add_book: '收书',
   collect: '编录',
   collect_book: '编目',
   browse: '浏览',

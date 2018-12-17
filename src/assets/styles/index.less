@@ -1,7 +1,7 @@
-@primary-color: #b45903ef;
+@primary-color: #029286ef;
 @paper-bg: #f0fcfba2;
-@card-bg: #ededf198;
-@white-bg: #ffffff88;
+@card-bg: #e7e7eca9;
+@white-bg: #ffffff8a;
 
 // text-color
 @text-black: #222;
@@ -9,7 +9,7 @@
 @text-grey: #aaa;
 @text-vice: #888;
 
-@border-color: #dddddd;
+@border-color: #b6b6b6;
 
 @page-border: rgb(102, 102, 117);
 @bookmark-color: #f35151e1;
@@ -24,13 +24,13 @@
 @title-size: 18px;
 @subtitle-size: 16px;
 
-@subtext-size: 14px;
-
+@drawer-header-height: 64px;
+@list-header-height: 48px;
 @title-height: 32px;
 @subtitle-height: 24px;
-@drawer-header-height: 64px;
-
+@scrollbar-width: 18px;
 @v-title-width: 16px;
+@subtext-size: 14px;
 
 @base-radius: 5px;
 
@@ -52,12 +52,20 @@
   border: 4px @primary-color double;
   padding: 4px;
   cursor: pointer;
+  opacity: .5;
+  transition: all 1s;
   &:hover {
+    opacity: 1;
     background: @card-bg;
   }
 }
 .icon-btn-disabled {
-  border: 4px @card-bg double;
+  border: 4px @text-grey double!important;
+  cursor: default!important;
+  color: @text-grey!important;
+  &:hover {
+    background: @paper-bg!important;
+  }
 }
 .drawer {
   .drawer-header {

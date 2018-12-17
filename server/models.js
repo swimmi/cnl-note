@@ -9,6 +9,7 @@ const pieceSchema = Schema({
   desc: String,                               // 题记
   author: { type: ObjectId, ref: 'Author' },  // 作者
   period: Number,                             // 时期，作者佚名时
+  category: Number,                           // 分类
   content: String,                            // 内容
   locked: { type: Boolean, default: false},   // 是否锁定
   bookmarks: [

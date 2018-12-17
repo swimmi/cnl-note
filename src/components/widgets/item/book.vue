@@ -1,6 +1,9 @@
 <template>
   <Card class="book" :padding="0" dis-hover :bordered="false">
-    <div class="book-title"><span class="v-title">{{ book.title }}</span></div>
+    <div class="book-header">
+      <span class="book-title v-title">{{ book.title }}</span>
+      <span class="book-author v-title">{{ book.author.name.full }}<Icon type="ios-barcode-outline" />著</span>
+    </div>
     <div class="book-footer">
       <div class="menu-item"><span @click="action('read')">{{ $str.read }}</span></div>
       <div class="menu-item"><span @click="action('modify')">{{ $str.modify }}</span></div>
@@ -33,32 +36,56 @@ export default {
   position: relative;
   width: 240px;
   height: 320px;
-  margin: 8px auto;
+  margin: 16px auto;
   padding: 24px;
-  background: @white-bg;
+  background: @card-bg;
+  border: 4px @white-bg groove;
+  border-radius: 0px;
   cursor: pointer;
+  opacity: .7;
   transition: all 1s;
   -webkit-transition: all 1s;
-  opacity: 0.7;
   &:hover {
-    background: @primary-color;
+    background: @white-bg;
+    border: 4px @white-bg groove;
     opacity: 1;
   }
   &:hover .book-footer {
-    color: @white-bg;
+    color: @text-grey;
     opacity: 1;
   }
-  .book-title {
+  .book-header {
     @border-size: 4px;
-    width: calc(@v-title-width + @border-size * 6);
-    border: @border-size solid @white-bg;
-    background: @white-bg;
     color: @text-black;
+    @pad: 6px;
     span {
-      width: calc(@v-title-width + @border-size * 4);
-      padding: 12px @border-size;
+      width: calc(@v-title-width + @pad * 3);
+      text-align: center;
+      padding: @pad * 2 @pad;
+    }
+    .book-title {
+      display: inline-block;
+      vertical-align: top;
       border: @border-size solid @primary-color;
       line-height: calc(@v-title-width + @border-size);
+      color: @primary-color;
+    }
+    .book-author {
+      display: inline-block;
+      vertical-align: top;
+      position: relative;
+      width: calc(@v-title-width + @border-size * 4);
+      line-height: calc(@v-title-width + @border-size);
+      padding: 4px @border-size;
+      color: @text-black;
+    }
+    .square-dot {
+      display: block;
+      width: 5px;
+      height: 5px;
+      background: @primary-color;
+      transform: rotate3d(90deg);
+      -webkit-transform: rotate3d(90deg);
     }
   }
   .book-footer {
@@ -73,13 +100,13 @@ export default {
       flex: 1;
       text-align: center;
       line-height: @title-height;
-      color: @card-bg;
+      color: @text-grey;
       cursor: pointer;
       span {
         display: block;
         width: 100%;
         &:hover {
-          color: white;
+          color: @primary-color;
         }
       }
     }

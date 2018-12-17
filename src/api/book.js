@@ -12,12 +12,18 @@ export const getCatalog = async function (params) {
 export const updateCatalog = async function (params) {
   return (await api.post('/book/catalog/update', params)).data
 }
+export const saveBookHistory = async function (params) {
+  return (await api.post('/book/history/save', params)).data
+}
 // 查询类
 export const getBook = async function (params) {
   return (await api.post('/book/get', params)).data
 }
 export const allBook = async function () {
   return (await api.get('/book/all')).data
+}
+export const searchBook = async function (params) {
+  return (await api.post('/book/search', params)).data
 }
 export const getBookContent = async function (params) {
   return (await api.post('/book/content', params)).data
@@ -27,4 +33,7 @@ export const getAuthorBooks = async function (params) {
 }
 export const getCategoryBooks = async function (params) {
   return (await api.post('/book/category', params)).data
+}
+export const getRecentBooks = async function (params) {
+  return (await api.post('/book/recent', params)).data
 }
