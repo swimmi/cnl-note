@@ -71,6 +71,8 @@ var simple = {
   start: '开始',
   stop: '停止',
   pause: '暂停',
+  resume: '继续',
+  cancel: '取消',
   // 提示
   no: '不',
   yes: '是',

@@ -70,7 +70,6 @@ export default {
     window.onresize = () => {
       this.maxSize = Math.floor((document.documentElement.clientWidth - 400) / 60) - 2
     }
-    console.log(this.maxSize)
     this.$nextTick(() => {
       this.$refs.powerInput.focus()
     })
@@ -109,22 +108,9 @@ export default {
       })
     },
     randomSentence () {
-      var text = '。' + this.random.piece.content
-      var temp = text.replace(/！|？/g, '。')
-      var i = Math.ceil(Math.random() * (temp.length - 1))
-      console.log(i, temp[i])
-      if (temp[i] == '。') {
-        i --
-      }
-      var start = temp.lastIndexOf('。', i)
-      if (start == -1) {
-        start = 0
-      }
-      var end = temp.indexOf('。', i)
-      if (end == -1) {
-        end = text.length - 1
-      }
-      this.random.sentence = this.$util.parseColumn(text.substring(start + 1, end + 1).trim())
+      const sentences = this.$util.splitToSentences(this.random.piece.content)
+      const rand = Math.floor((Math.random() * sentences.length))
+      this.random.sentence = this.$util.parseColumn(sentences[rand])
     },
     changeBg () {
       this.theme = Math.ceil(Math.random() * 20)
@@ -139,7 +125,6 @@ export default {
 }
 </script>
 <style lang="less">
-@primary-color: #248631c9;
 #app {
   font-family: 'MyFont';
   -webkit-user-select: none;

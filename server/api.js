@@ -74,7 +74,7 @@ router.post('/piece/random', (req, res) => {
 // 篇章内容
 router.post('/piece/content/get', (req, res) => {
   const id = req.body.id
-  models.Piece.findById(id, {'content': 1}, (err, data) => {res.send(err?err:data)})
+  models.Piece.findById(id, {'title': 1, 'content': 1}, (err, data) => {res.send(err?err:data)})
 })
 router.post('/piece/content/update', (req, res) => {
   const id = req.body.id
@@ -269,11 +269,10 @@ router.post('/util/pairtext', function(req, res) {
     })
 })
 
-router.get('/:dir/:id/:name', function(req, res) {
+router.get('/:dir/:name', function(req, res) {
   var dir = req.params.dir
-  var id = req.params.id
   var options = {
-    root: __dirname + `/uploads/${dir}/${id}/`,
+    root: __dirname + `/uploads/${dir}/`,
     dotfiles: 'deny',
     headers: {
         'x-timestamp': Date.now(),
@@ -295,8 +294,7 @@ router.post('/upload', function(req, res) {
     return res.status(400).send('No files were uploaded.')
   }
   let file = req.files.file
-  const id = req.body.id
-  file.mv(`uploads/records/${id}/` + file.name, function(err) {
+  file.mv(`uploads/records/` + file.name, function(err) {
     if (err)
       return res.status(500).send(err)
     res.send('File uploaded!')

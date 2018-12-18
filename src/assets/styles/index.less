@@ -58,6 +58,19 @@
   src: url('~@/assets/fonts/lishu.ttf')
 }
 
+.circle-icon-btn {
+  width: 32px;
+  height: 32px;
+  padding: 8px;
+  opacity: .5;
+  transition: all .3s;
+  border-radius: @base-radius;
+  cursor: pointer;
+  &:hover {
+    opacity: 1;
+    background: @white-bg;
+  }
+}
 .icon-btn {
   background: @paper-bg;
   border: 4px @primary-color double;
@@ -84,6 +97,7 @@
     line-height: 64px;
     background: lighten(@primary-color, 10%);
     text-align: center;
+    z-index: 99;
     .drawer-title {
       margin: 0 auto;
       width: calc(100% - 68px);
@@ -130,6 +144,13 @@
   line-height: @font-power * 1.2;
   font-size: @font-power;
 }
+.flex-center {
+  display: -webkit-flex;
+  display: flex;
+  -webkit-justify-content: center;
+  justify-content: center;
+  align-items: center;
+}
 .center-title {
   width: 100%;
   text-align: center;
@@ -150,6 +171,14 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
+}
+.hover-fade {
+  cursor: pointer;
+  opacity: .7;
+  transition: all .5s;
+  &:hover {
+    opacity: 1;
+  }
 }
 .float-left {
   float: left;

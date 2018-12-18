@@ -15,23 +15,16 @@
           type="ios-mic"
           size="24"
           :color="showRecordPlayer? 'red' : '#333'"
-          :title="$str.play + $str.record"
+          :title="(showRecordPlayer? $str.stop : $str.start) + $str.record"
           @click="showRecordPlayer = !showRecordPlayer"/>
         <Icon
           class="icon-btn piece-action-btn"
-          :type="showRecordPlayer? 'ios-pause' : 'ios-play'"
+          :type="isPlaying ? 'ios-pause' : 'ios-play'"
           size="24"
           color="red"
-          :title="$str.pause + $str.record"
+          :title="(isPlaying ? $str.pause : $str.resume) + $str.record"
           v-show="showRecordPlayer"
           @click="playRecord"/>
-        <Icon
-          class="icon-btn piece-action-btn"
-          type="ios-skip-forward"
-          size="24"
-          color="red"
-          v-show="showRecordPlayer"
-          @click="playNext"/>
       </div>
       <div class="page-control">
         <Icon
@@ -134,13 +127,13 @@ export default {
       showPiece: false,
       sentences: [],        // 句子
       sentenceIndex: 0,     // 句子索引
-      showRecordPlayer: true,
-      info: {
-        p: 0,
-        c: 0,
-        i: 0
+      showRecordPlayer: false,
+      isPlaying: true,
+      info: {               // 当前高亮处
+        p: 0,               // 页码
+        c: 0,               // 列数
+        i: 0                // 高亮尾端位置，去除占位空格
       },
-      playingColumn: 0,     // 当前播放位置
       isRowspan: false,     // 是否跨列
       audio: null,
       loading: true
@@ -164,38 +157,44 @@ export default {
     },
     isPlayingColumn () {
       return function(pi, index) {
-        var i = pi * this.maxColumn + index
-        if (i == this.playingColumn) {
+        const ci = this.info.p * this.maxColumn + this.info.c
+        const i = pi * this.maxColumn + index
+        if (i == ci) {
           return true
-        } else if (this.isRowspan && i == this.playingColumn + 1) {
+        } else if (this.isRowspan && i == ci - 1) {
           return true
         }
         return false
       }
     },
-    indicatorIndex () {
-      return function () {
-        return 0
-      }
-    },
     upHeight () {
       return function (column, index) {
-        var len = this.info.i
-        if (this.isRowspan && index == this.info.c) {
-          len = this.column.length - (this.currentSentence.length - this.info.i)
+        const ccl = column.replace(/ /g, '').length
+        const csl = this.currentSentence.replace(/ /g, '').length
+        var len = 0
+        if (!this.isRowspan) {
+          len = this.info.i - csl
+        } else {
+          if (index != this.info.c) {
+            len = ccl - (csl - this.info.i)
+          }
         }
-        console.log(len)
+        len += 1  // 头部预留格
+        if (this.isIndent(index)) {
+          len += 2 // 缩进格
+        }
         return len * this.fh
       }
     },
     indicatorHeight () {
       return function (column, index) {
+        const csl = this.currentSentence.replace(/ /g, '').length
         var len = 0
         if (!this.isRowspan) {
-          len = this.currentSentence.length
+          len = csl
         } else {
-          if (index == this.info.c) {
-            len = this.currentSentence.length - this.info.i
+          if (index != this.info.c) {
+            len = csl - this.info.i
           } else {
             len = this.info.i
           }
@@ -265,6 +264,9 @@ export default {
         this.contents[0] = this.srcContent
         this.sentences = this.$util.splitToSentences(this.srcContent)
         this.showContent()
+        // 高亮临时
+        this.info.i = this.currentSentence.replace(/ /g, '').length
+
         savePieceHistory({id: this.id})
       })
     }
@@ -380,25 +382,33 @@ export default {
       this.$bus.emit('changeMode')
     },
     playRecord () {
-
+      this.isPlaying = !this.isPlaying
     },
     playNext () {
-      const text = this.pages[this.info.p][this.info.c]
-      this.playingColumn = this.info.p * this.maxColumn + this.info.c
-      console.log(this.currentSentence)
-      if (text.indexOf(this.currentSentence) != -1) {
-        this.info.i += this.currentSentence.length
-        this.isRowspan = false
-      } else {
-        this.info.i = this.currentSentence.length - (text.length - this.info.i)
-        this.isRowspan = true
-        this.info.c ++
-        if (this.info.c == this.maxColumn) {
-          this.info.c = 0
-          this.info.p ++
+      if (this.sentenceIndex < this.sentences.length - 1) {
+        this.sentenceIndex ++                                           // 移至下一句
+        const csl = this.currentSentence.replace(/ /g, '').length       // 当前句长度
+        const currentColumn = this.pages[this.info.p][this.info.c]      // 当前列文本
+        const ccl = currentColumn.replace(/ /g, '').length              // 当前列长度
+        if (currentColumn.indexOf(this.currentSentence) != -1) {
+          this.info.i += csl
+          this.isRowspan = false
+        } else {
+          this.info.i = csl - (ccl - this.info.i)
+          this.info.c ++
+          if (this.info.c == this.maxColumn) {
+            this.info.c = 0
+            this.info.p ++
+          }
+          if (this.info.i < csl) {
+            this.isRowspan = true
+          } else {
+            this.isRowspan = false
+          }
         }
+      } else {
+        this.showRecordPlayer = false
       }
-      this.sentenceIndex ++
     },
     stampText (val) {
       if (val.length == 3) {

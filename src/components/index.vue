@@ -389,11 +389,7 @@ export default {
     .content-right {
       width: calc(100% - 360px);
       height: 100vh;
-      display: -webkit-flex;
-      display: flex;
-      -webkit-justify-content: center;
-      justify-content: center;
-      align-items: center;
+      .flex-center();
     }
     .sider-switch {
       position: absolute;
@@ -403,11 +399,8 @@ export default {
   }
 }
 .layout-read-mode {
-  display: -webkit-flex;
+  .flex-center();
   height: 100vh;
-  -webkit-justify-content: center;
-  justify-content: center;
-  align-items: center;
   background: transparent;
 }
 .book {

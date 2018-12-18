@@ -21,6 +21,7 @@ const pieceSchema = Schema({
     }
   ],
   relates: [],                                // 相关内容
+  records: [],
   hidden: Boolean,
   lastViewAt: Date                            // 上次浏览
 }, {collection: 'pieces', timestamps: true})

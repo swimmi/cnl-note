@@ -57,9 +57,20 @@ var parseColumn = function (content) {
 }
 
 var splitToSentences = function (content) {
-  const regex = new RegExp(/(。|；|？)/g)
-  content = content.replace(regex, '$1_').replace(/\n/g, '')
-  var array = content.split('_')
+  const regex = new RegExp(/(。|；|？|！)/g)
+  content = content.replace(regex, '$1 ').replace(/\n/g, '').trim()
+  var array = content.split(' ')
+  if (content.split(/？|！|；/).length > 0) {
+    for (var i = 0; i < array.length; i++) {
+      const item = array[i]
+      if (/^[\u4e00-\u9fa5]+[？|！|；]/.test(item)) {
+        if (i < array.length - 1) {
+          array.splice(i, 1)
+          array[i] = item + array[i]
+        }
+      }
+    }
+  }
   return array
 }
 
