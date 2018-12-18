@@ -56,8 +56,15 @@ var parseColumn = function (content) {
   return c
 }
 
+var splitToSentences = function (content) {
+  const regex = new RegExp(/(。|；|？)/g)
+  content = content.replace(regex, '$1_').replace(/\n/g, '')
+  var array = content.split('_')
+  return array
+}
+
 export default {
   functions: {
-    parseNumber, parseColumn
+    parseNumber, parseColumn, splitToSentences
   }
 }

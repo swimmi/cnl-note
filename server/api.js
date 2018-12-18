@@ -238,17 +238,17 @@ router.post('/book/history/save', (req, res) => {
 // Util
 router.get('/util/dashboard', async (req, res) => {
   var counts = [0, 0, 0]
-  await models.Author.countDocuments((err, data) => {
-    if(!err) { counts[0] = data }
-  })
-  await models.Piece.countDocuments((err, data) => {
-    if(!err) { counts[1] = data }
-  })
   await models.Piece.find({}, {content: 1}, (err, data) => {
     if(!err) { 
       counts[2] = data.reduce(function (total, item) {
         return total + item.content.length
       }, 0)
+      models.Author.countDocuments((err, data) => {
+        if(!err) { counts[0] = data }
+      })
+      models.Piece.countDocuments((err, data) => {
+        if(!err) { counts[1] = data }
+      })
     }
   })
   res.send(counts)

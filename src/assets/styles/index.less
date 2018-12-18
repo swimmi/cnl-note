@@ -1,14 +1,14 @@
-@primary-color: #029286ef;
+@primary-color: #023092c4;
 @paper-bg: #f0fcfba2;
 @card-bg: #e5f1f1a9;
 @white-bg: #ffffff8a;
-@mask-bg: #0a0a0af8;
+@mask-bg: #0a0a0ae8;
 
 // text-color
 @text-black: #222;
-@text-white: rgb(240, 240, 240);
+@text-white: #f5efefc4;
 @text-grey: #aaa;
-@text-vice: #888;
+@text-vice: #3541539d;
 
 @border-color: #b6b6b6;
 
@@ -22,7 +22,7 @@
 @font-big: 18px;
 @font-large: 20px;
 
-@font-power: 28px;
+@font-power: 32px;
 
 @title-size: 18px;
 @subtitle-size: 16px;
@@ -48,6 +48,14 @@
 @font-face {
   font-family: Zhuanti;
   src: url('~@/assets/fonts/zhuanti.ttf')
+}
+@font-face {
+  font-family: Xingkai;
+  src: url('~@/assets/fonts/xingkai.ttf')
+}
+@font-face {
+  font-family: Lishu;
+  src: url('~@/assets/fonts/lishu.ttf')
 }
 
 .icon-btn {
@@ -168,4 +176,19 @@
   0% {background-position: 0% 50%}
   50% {background-position: 100% 50%}
   100% {background-position: 0% 50%}
+}
+
+.slide-in-left {
+  animation: slideInLeft .3s ease-in-out 1 forwards;
+}
+.slide-out-left {
+  animation: slideOutLeft .3s ease-in-out 1 forwards;
+}
+@keyframes slideInLeft {
+  from { width: 0px }
+  to { width: 100% }
+}
+@keyframes slideOutLeft {
+  from { width: 100% }
+  to { width: 0px }
 }

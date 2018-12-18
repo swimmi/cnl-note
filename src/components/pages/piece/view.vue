@@ -2,13 +2,37 @@
   <Spin v-if="loading"/>
   <div v-else class="piece-page" ref="page">
     <div class="piece-space">
-      <Icon
-        class="page-expand"
-        :type="readMode?'ios-paper-outline':'ios-book-outline'"
-        size="24"
-        color="#333"
-        :title="(readMode?$str.browse:$str.read) + $str.mode"
-        @click="expandPage"/>
+      <div class="piece-action">
+        <Icon
+          class="icon-btn piece-action-btn"
+          :type="readMode?'ios-paper':'ios-book'"
+          size="24"
+          color="#333"
+          :title="(readMode?$str.browse:$str.read) + $str.mode"
+          @click="expandPage"/>
+        <Icon
+          class="icon-btn piece-action-btn"
+          type="ios-mic"
+          size="24"
+          :color="showRecordPlayer? 'red' : '#333'"
+          :title="$str.play + $str.record"
+          @click="showRecordPlayer = !showRecordPlayer"/>
+        <Icon
+          class="icon-btn piece-action-btn"
+          :type="showRecordPlayer? 'ios-pause' : 'ios-play'"
+          size="24"
+          color="red"
+          :title="$str.pause + $str.record"
+          v-show="showRecordPlayer"
+          @click="playRecord"/>
+        <Icon
+          class="icon-btn piece-action-btn"
+          type="ios-skip-forward"
+          size="24"
+          color="red"
+          v-show="showRecordPlayer"
+          @click="playNext"/>
+      </div>
       <div class="page-control">
         <Icon
           class="icon-btn"
@@ -34,8 +58,23 @@
             :class="{'column-indent': isIndent(index), 'column-vice': isVice(pi, index), 'column-title': isTitle(pi, index)}">
             {{ column }}
           </span>
+          <transition enter-active-class="flipInY" leave-active-class="flipOutY">
+            <div
+              class="column-mask animated"
+              v-show="showRecordPlayer">
+              <div class="column-mask-up" :style="`height: ${upHeight(column, index)}px`"></div>
+              <div class="column-indicator" :style="`height: ${indicatorHeight(column, index)}px`" v-show="isPlayingColumn(pi, index)"></div>
+              <div class="column-mask-down"></div>
+            </div>
+          </transition>
         </div>
-        <div class="column" v-for="n in maxColumn - page.length"><span class="v-text"></span></div>
+        <div class="column" v-for="n in maxColumn - page.length">
+          <span class="v-text">
+            <transition enter-active-class="flipInY" leave-active-class="flipOutY">
+            <div class="column-mask animated" v-show="showRecordPlayer"><div class="column-mask-down"></div></div>
+          </transition>
+          </span>
+        </div>
       </div>
       <div class="piece-stamp animated fadeIn" v-show="pageIndex == pages.length - 1"><span>{{ stampText(author) }}</span></div>
     </div>
@@ -88,54 +127,111 @@ export default {
       viceColumns: [],
       titleColumns: [],
       bookmarks: [],
-      cw: 0,
-      ch: 0,
+      fh: 22,               // 字高
+      fw: 36,               // 字宽
+      cw: 0,                // 窗口宽度
+      ch: 0,                // 窗口高度
       showPiece: false,
+      sentences: [],        // 句子
+      sentenceIndex: 0,     // 句子索引
+      showRecordPlayer: true,
+      info: {
+        p: 0,
+        c: 0,
+        i: 0
+      },
+      playingColumn: 0,     // 当前播放位置
+      isRowspan: false,     // 是否跨列
+      audio: null,
       loading: true
     }
   },
   computed: {
-    isIndent() {
+    isIndent () {
       return function (index) {
         return this.indentColumns[this.pageIndex].indexOf(index) != -1
       }
     },
-    isVice() {
+    isVice () {
       return function (pi, index) {
         return this.viceColumns.indexOf(pi * this.maxColumn + index) != -1
       }
     },
-    isTitle() {
+    isTitle () {
       return function (pi, index) {
         return this.titleColumns.indexOf(pi * this.maxColumn + index) != -1
       }
+    },
+    isPlayingColumn () {
+      return function(pi, index) {
+        var i = pi * this.maxColumn + index
+        if (i == this.playingColumn) {
+          return true
+        } else if (this.isRowspan && i == this.playingColumn + 1) {
+          return true
+        }
+        return false
+      }
+    },
+    indicatorIndex () {
+      return function () {
+        return 0
+      }
+    },
+    upHeight () {
+      return function (column, index) {
+        var len = this.info.i
+        if (this.isRowspan && index == this.info.c) {
+          len = this.column.length - (this.currentSentence.length - this.info.i)
+        }
+        console.log(len)
+        return len * this.fh
+      }
+    },
+    indicatorHeight () {
+      return function (column, index) {
+        var len = 0
+        if (!this.isRowspan) {
+          len = this.currentSentence.length
+        } else {
+          if (index == this.info.c) {
+            len = this.currentSentence.length - this.info.i
+          } else {
+            len = this.info.i
+          }
+        }
+        return len * this.fh
+      }
+    },
+    currentSentence: function () {
+      return this.$util.parseColumn(this.sentences[this.sentenceIndex])
     }
   },
   mounted () {
     this.cw = document.documentElement.clientWidth;
     this.ch = document.documentElement.clientHeight;
-    this.maxRow = Math.floor((this.ch * 0.9 - 50) / 22)
+    this.maxRow = Math.floor((this.ch * 0.9 - 50) / this.fh)
     if (this.readMode) {
-      this.maxColumn = Math.floor((this.cw - 250) / 36)
+      this.maxColumn = Math.floor((this.cw - 250) / this.fw)
     } else {
-      this.maxColumn = Math.floor((this.cw - 900) / 36)
+      this.maxColumn = Math.floor((this.cw - 900) / this.fw)
     }
     window.onresize = () => {
-        this.cw = document.documentElement.clientWidth;
-        this.ch = document.documentElement.clientHeight;
-        if (this.readMode) {
-          this.maxColumn = Math.floor((this.cw - 250) / 36)
-          this.maxRow = Math.floor((this.ch * 0.9 - 50) / 22)
-          if (this.maxColumn < 8) {
-            this.maxColumn = 8
-          }
-          if (this.maxRow < 8) {
-            this.maxRow = 8
-          }
-          this.showContent()
-        } else {
-          this.maxColumn = Math.floor((this.cw - 900) / 36)
+      this.cw = document.documentElement.clientWidth;
+      this.ch = document.documentElement.clientHeight;
+      if (this.readMode) {
+        this.maxColumn = Math.floor((this.cw - 250) / this.fw)
+        this.maxRow = Math.floor((this.ch * 0.9 - 50) / this.fh)
+        if (this.maxColumn < 8) {
+          this.maxColumn = 8
         }
+        if (this.maxRow < 8) {
+          this.maxRow = 8
+        }
+      } else {
+        this.maxColumn = Math.floor((this.cw - 900) / this.fw)
+      }
+      this.showContent()
     }
     if (this.isBook) {
       getBookContent({'book': this.id}).then(res => {
@@ -159,11 +255,15 @@ export default {
           })
         }
         // 加入题序
+        if (res.desc != '') {
+          this.srcContent = this.fillDesc(res.desc) + '\n' + this.srcContent
+        }
         // 加入相关内容
         res.relates.forEach(item => {
           this.contents[item.type + 1] = item.content
         })
         this.contents[0] = this.srcContent
+        this.sentences = this.$util.splitToSentences(this.srcContent)
         this.showContent()
         savePieceHistory({id: this.id})
       })
@@ -174,10 +274,17 @@ export default {
       var n = title.length - 2
       return '┐ ' + '│ '.repeat(n) + `┘\n${title}\n┌ ` + '│ '.repeat(n) + '└'
     },
+    fillDesc (desc) {
+      if (desc.trim().length > 0) {
+        return `◎\n${desc}\n◎`
+      } else {
+        return ''
+      }
+    },
     getItemContent(item) {
-      this.srcContent += this.fillTitle(item.title) + item.desc + '\n'
+      this.srcContent += this.fillTitle(item.title) + this.fillDesc(item.desc) + '\n'
       item.pieces.forEach(piece => {
-        this.srcContent += this.fillTitle(piece.title)  + piece.desc + '\n' + piece.content + '\n'
+        this.srcContent += this.fillTitle(piece.title)  + this.fillDesc(piece.desc) + '\n' + piece.content + '\n'
       })
       item.children.forEach(subitem => {
         this.getItemContent(subitem)
@@ -193,6 +300,7 @@ export default {
       var indent = []                         // 每页缩进行
       var page = []                           // 页
       var content = []                        // 文
+      var isDesc = false                      // 是序言
       paragraphs.forEach(element => {
         if (element.trim() != '') {
           for (var i = 0; i < element.length; i += this.maxRow) {
@@ -200,10 +308,17 @@ export default {
               element = '＠＠' + element
             }
             var c = element.slice(i, i + this.maxRow)
-            // 句读加空格在前
             c = this.$util.parseColumn(c).replace('＠＠', '')
+            const contentIndex = content.length * this.maxColumn + columnIndex
             if (c[0] == '┐') {
-              this.titleColumns.push(content.length * this.maxColumn + columnIndex + 1)
+              this.titleColumns.push(contentIndex + 1)
+            }
+            if (c[0] == '◎') {
+              isDesc = !isDesc
+              this.viceColumns.push(contentIndex)
+            }
+            if (isDesc) {
+              this.viceColumns.push(contentIndex)
             }
             page.push(c)
             columnIndex++
@@ -264,6 +379,27 @@ export default {
     expandPage () {
       this.$bus.emit('changeMode')
     },
+    playRecord () {
+
+    },
+    playNext () {
+      const text = this.pages[this.info.p][this.info.c]
+      this.playingColumn = this.info.p * this.maxColumn + this.info.c
+      console.log(this.currentSentence)
+      if (text.indexOf(this.currentSentence) != -1) {
+        this.info.i += this.currentSentence.length
+        this.isRowspan = false
+      } else {
+        this.info.i = this.currentSentence.length - (text.length - this.info.i)
+        this.isRowspan = true
+        this.info.c ++
+        if (this.info.c == this.maxColumn) {
+          this.info.c = 0
+          this.info.p ++
+        }
+      }
+      this.sentenceIndex ++
+    },
     stampText (val) {
       if (val.length == 3) {
         val = val + '作'
@@ -299,9 +435,11 @@ export default {
       text-align: right;
     }
     .page {
+      position: relative;
       width: 100%;
       height: 100%;
       background-color: @paper-bg;
+      overflow: hidden;
       .column-indent {
         position: relative;
         top: @line-height * 2;
@@ -365,6 +503,31 @@ export default {
           color: @text-black;
           font-size: @title-size;
           font-weight: bold;
+        }
+        .column-mask {
+          position: absolute;
+          display: flex;
+          flex-direction: column;
+          top: 0px;
+          right: 1px;
+          width: calc(100% - 2px);
+          height: 100%;
+          z-index: 4;
+          div {
+            background-color: fade(@primary-color, 30%);
+          }
+          .column-indicator {
+            background-color: fade(@primary-color, 0%);
+            // animation: flashFade 3s infinite;
+            @keyframes flashFade {
+              0% { background-color: fade(@primary-color, 10%); }
+              50% { background-color: fade(@primary-color, 30%); }
+              100% { background-color: fade(@primary-color, 10%); }
+            }
+          }
+          .column-mask-down {
+            flex: 1;
+          }
         }
       }
     }
@@ -436,8 +599,11 @@ export default {
     display: inline-block;
     vertical-align: top;
     height: 100%;
-    .page-expand {
-      .icon-btn();
+    .piece-action {
+      .piece-action-btn {
+        display: block;
+        margin-bottom: 16px;
+      }
     }
     .page-control {
       position: absolute;

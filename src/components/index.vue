@@ -57,6 +57,9 @@
       </div>
     </Drawer>
   </Layout>
+  <div hidden class="audio-player-container">
+    <audio hidden ref="audioPlayer" src="static/music.mp3" preload="true" />
+  </div>
 </div>
 </template>
 <script>

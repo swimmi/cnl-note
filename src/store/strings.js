@@ -70,6 +70,7 @@ var simple = {
   sort: '排序',
   start: '开始',
   stop: '停止',
+  pause: '暂停',
   // 提示
   no: '不',
   yes: '是',

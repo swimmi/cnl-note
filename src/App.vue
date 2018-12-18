@@ -66,9 +66,9 @@ export default {
     }
   },
   mounted () {
-    this.maxSize = Math.floor((document.documentElement.clientWidth - 400) / 60)
+    this.maxSize = Math.floor((document.documentElement.clientWidth - 400) / 60) - 2
     window.onresize = () => {
-      this.maxSize = Math.floor((document.documentElement.clientWidth - 400) / 60)
+      this.maxSize = Math.floor((document.documentElement.clientWidth - 400) / 60) - 2
     }
     console.log(this.maxSize)
     this.$nextTick(() => {
@@ -161,6 +161,7 @@ export default {
     }
   }
   .power-mask {
+    font-family: 'Xingkai';
     position: absolute;
     top: 0px;
     left: 0px;
@@ -187,12 +188,12 @@ export default {
     }
     @keyframes rotate {
       0% {transform: rotateZ(0deg); background: @primary-color; box-shadow: @white-bg 0px 0px 0px;}
-      50% {transform: rotateZ(900deg); background: @card-bg; box-shadow: @white-bg 0px 0px 60px;}
+      50% {transform: rotateZ(900deg); background: fade(@primary-color, 10%); box-shadow: @white-bg 0px 0px 60px;}
       100% {transform: rotateZ(1800deg); background: @primary-color; box-shadow: @white-bg 0px 0px 0px;}
     }
     @-webkit-keyframes rotate {
       0% {transform: rotateZ(0deg); background: @primary-color; box-shadow: @white-bg 0px 0px 0px;}
-      50% {transform: rotateZ(900deg); background: @card-bg; box-shadow: @white-bg 0px 0px 60px;}
+      50% {transform: rotateZ(900deg); background: fade(@primary-color, 10%); box-shadow: @white-bg 0px 0px 60px;}
       100% {transform: rotateZ(1800deg); background: @primary-color; box-shadow: @white-bg 0px 0px 0px;}
     }
   }
@@ -216,16 +217,15 @@ export default {
   }
   .pair-text-container {
     .center-parent();
-    width: calc(100% - 400px);
+    width: calc(100% - 440px);
     height: 80vh;
-    right: 32px;
     text-align: right;
     overflow: hidden;
     .pair-text {
       display: inline-block;
       vertical-align: top;
       margin: 16px;
-      color: @white-bg;
+      color: @text-white;
       transition: all 1s;
       cursor: pointer;
       &:hover {

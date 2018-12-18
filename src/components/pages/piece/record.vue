@@ -44,7 +44,7 @@ export default {
     getPieceContent({id: this.id}).then(res => {
       if (res) {
         this.content = res.content
-        this.textRows = this.content.split('。')
+        this.textRows = this.$util.splitToSentences(res.content)
       }
     })
     this.init()
