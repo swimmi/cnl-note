@@ -40,6 +40,7 @@ var simple = {
   alias: '别名',
   catalog: '目录',
   book_piece: '书篇',
+  random: '随机',
   // 动词
   add: '添加',
   back: '返回',

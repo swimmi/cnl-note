@@ -27,7 +27,7 @@
           :value="item.id">{{ item.title }}</Option>
       </Select>
     </FormItem>
-    <FormItem :label="$str.book_category" prop="category">
+    <FormItem :label="$str.book_category">
       <Select v-model="piece.category" filterable>
         <OptionGroup
           v-for="(item, index) in categoryList"

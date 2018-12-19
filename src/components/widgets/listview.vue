@@ -1,14 +1,14 @@
 <template>
   <div class="list-view">
     <div class="list-header">
-      <div class="list-title"><span>{{ data.title }}</span></div>
+      <div class="list-title" @click="scrollToTop"><span>{{ data.title }}</span></div>
       <div class="list-tabs">
         <span class="title-piece" :class="{'title-on': item == 0}" @click="item = 0">{{ $str.piece }}</span>
         <span class="title-book" :class="{'title-on': item == 1}" @click="item = 1">{{ $str.book }}</span>
         <span class="list-tabs-indicator" :class="selectedTab"></span>
       </div>
     </div>
-    <Scroll :on-reach-edge="handleData" :distance-to-edge="10" class="list-scroll" :height="scrollHeight">
+    <Scroll ref="scroll" :on-reach-edge="handleData" :distance-to-edge="10" class="list-scroll" :height="scrollHeight">
       <section v-if="item == 0">
         <piece-item
         v-for="(item, index) in pieces"
@@ -64,6 +64,9 @@ export default {
     this.loadData(1)
   },
   methods: {
+    scrollToTop () {
+      this.$refs.scroll.scrollTop = this.$refs.scroll.scrollHeight
+    },
     fetch (val, methods, params) {
       methods[val](params).then(res => {
         res.forEach(item => {
@@ -123,8 +126,7 @@ export default {
 .list-view {
   height: 100vh;
   position: relative;
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: hidden;
   .list-header {
     margin: 0px auto;
     text-align: center;

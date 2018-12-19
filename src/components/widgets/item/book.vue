@@ -3,6 +3,10 @@
     <div class="book-header">
       <span class="book-title v-title">{{ book.title }}</span>
       <span class="book-author v-title">{{ book.author.name.full }}<Icon type="ios-barcode-outline" />著</span>
+      <div class="info-right">
+        <span v-if="this.book.lastViewAt"><Time :time="this.book.lastViewAt"/><Icon type="ios-book-outline" size="16" color="#aaa"/></span>
+        <span v-else>{{ $str.not_yet + $str.read }}</span>
+      </div>
     </div>
     <div class="book-footer">
       <div class="menu-item"><span @click="action('read')">{{ $str.read }}</span></div>
@@ -37,17 +41,15 @@ export default {
   width: 240px;
   height: 320px;
   margin: 16px auto;
-  padding: 24px;
-  background: @card-bg;
-  border: 4px @white-bg groove;
+  padding: 12px 12px 12px 24px;
+  background: @white-bg;
+  border: 2px @white-bg solid;
   border-radius: 0px;
   cursor: pointer;
+  transition: all .3s;
   opacity: .7;
-  transition: all 1s;
-  -webkit-transition: all 1s;
   &:hover {
-    background: @white-bg;
-    border: 4px @white-bg groove;
+    border: 2px @white-bg groove;
     opacity: 1;
   }
   &:hover .book-footer {
@@ -79,13 +81,12 @@ export default {
       padding: 4px @border-size;
       color: @text-black;
     }
-    .square-dot {
-      display: block;
-      width: 5px;
-      height: 5px;
-      background: @primary-color;
-      transform: rotate3d(90deg);
-      -webkit-transform: rotate3d(90deg);
+    .info-right {
+      float: right;
+      color: @text-vice;
+      span {
+        font-size: @subtext-size;
+      }
     }
   }
   .book-footer {

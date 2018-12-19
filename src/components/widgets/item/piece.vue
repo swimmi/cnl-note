@@ -10,7 +10,10 @@
       </div>
     </div>
     <div class="piece-header">
-      <div class="piece-title"><span>{{ piece.title }}</span></div>
+      <div class="piece-title" :title="piece.title">
+        <marquee v-if="piece.title.length >= 16" class="piece-title-long" scrollamount="15">{{ piece.title }}</marquee>
+        <span v-else>{{ piece.title }}</span>
+      </div>
       <div class="piece-author"><span>{{ piece.author.name.full }}</span></div>
       <div class="piece-brief"><span>{{ piece.content }}</span></div>
     </div>
@@ -68,16 +71,12 @@ export default {
   text-align: center;
   width: 90%;
   margin: 12px auto;
-  border: none;
-  background: transparent;
+  background: @white-bg;
   padding: 12px 12px 6px 12px;
   cursor: pointer;
-  transition: all 1s;
-  -webkit-transition: all 1s;
-  opacity: 0.7;
+  .hover-fade();
   &:hover {
     background: @white-bg;
-    opacity: 1;
   }
   &:hover .piece-footer {
     opacity: 1;
@@ -102,6 +101,9 @@ export default {
     .piece-title {
       height: @title-height;
       line-height: @title-height;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
       font-size: @title-size;
       color: @primary-color;
       font-weight: bold;

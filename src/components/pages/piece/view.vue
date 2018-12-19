@@ -1,5 +1,5 @@
 <template>
-  <Spin v-if="loading"/>
+  <Spin v-if="loading" />
   <div v-else class="piece-page" ref="page">
     <div class="piece-space">
       <div class="piece-action">
@@ -7,24 +7,33 @@
           class="icon-btn piece-action-btn"
           :type="readMode?'ios-paper':'ios-book'"
           size="24"
-          color="#333"
+          color="#888"
           :title="(readMode?$str.browse:$str.read) + $str.mode"
           @click="expandPage"/>
         <Icon
           class="icon-btn piece-action-btn"
           type="ios-mic"
           size="24"
-          :color="showRecordPlayer? 'red' : '#333'"
+          :color="showRecordPlayer? 'red' : '#888'"
           :title="(showRecordPlayer? $str.stop : $str.start) + $str.record"
           @click="showRecordPlayer = !showRecordPlayer"/>
+        <transition enter-active-class="fadeIn" leave-active-class="fadeOut">
+          <Icon
+            class="icon-btn piece-action-btn animated"
+            :type="isPlaying ? 'ios-pause' : 'ios-play'"
+            size="24"
+            color="red"
+            :title="(isPlaying ? $str.pause : $str.resume) + $str.record"
+            v-show="showRecordPlayer"
+            @click="playRecord"/>
+        </transition>
         <Icon
           class="icon-btn piece-action-btn"
-          :type="isPlaying ? 'ios-pause' : 'ios-play'"
+          type="ios-paper-plane"
           size="24"
-          color="red"
-          :title="(isPlaying ? $str.pause : $str.resume) + $str.record"
-          v-show="showRecordPlayer"
-          @click="playRecord"/>
+          color="#888"
+          :title="$str.random + $str.piece"
+          @click="randomView"/>
       </div>
       <div class="page-control">
         <Icon
@@ -32,17 +41,18 @@
           :class="{'icon-btn-disabled': pageIndex == 0}"
           type="ios-arrow-up"
           size="24"
-          @click="if(pageIndex > 0) pageIndex--" />
-        <span class="page-number v-title">{{ $util.parseNumber(pageIndex + 1) }}</span>
+          @click="pageIndex > 0 ? pageIndex-- : ''" />
+        <span class="label-text page-number current-number" @click="showPages = !showPages">第{{ $util.parseNumber(pageIndex + 1) }}页</span>
         <Icon
           class="icon-btn"
           :class="{'icon-btn-disabled': pageIndex == pages.length - 1}"
           type="ios-arrow-down"
           size="24"
-          @click="if(pageIndex < pages.length - 1) pageIndex++" />
+          @click="pageIndex < pages.length - 1 ? pageIndex++ : ''" />
       </div>
     </div>
     <div class="piece-content" :class="{'animated fadeIn': showPiece}">
+      <Slider show-stops v-show="pages.length > 1 && showPages" class="piece-page-control" :max="pages.length - 1" v-model="pageIndex"></Slider>
       <div class="page animated fadeIn" v-show="pageIndex == pi" v-for="(page, pi) in pages" :key="pi">
         <div class="column" v-for="(column, index) in page">
           <span class="bookmark-space" :class="{'bookmark': indexBookmark(pi, index) > -1}" @click="bookmark(pi, index, column)" :title="$str.add + $str.bookmark"></span>
@@ -64,15 +74,18 @@
         <div class="column" v-for="n in maxColumn - page.length">
           <span class="v-text">
             <transition enter-active-class="flipInY" leave-active-class="flipOutY">
-            <div class="column-mask animated" v-show="showRecordPlayer"><div class="column-mask-down"></div></div>
-          </transition>
+              <div class="column-mask animated" v-show="showRecordPlayer"><div class="column-mask-down"></div></div>
+            </transition>
           </span>
         </div>
       </div>
       <div class="piece-stamp animated fadeIn" v-show="pageIndex == pages.length - 1"><span>{{ stampText(author) }}</span></div>
     </div>
     <div class="piece-title-container">
-      <span class="v-title piece-title">{{ title }}</span>
+      <span class="v-title piece-title">
+        <marquee class="piece-title-long" v-if="title.length >= 16" scrollamount="15" direction="up">{{ title }}</marquee>
+        <span v-else>{{ title }}</span>
+      </span>
       <div class="piece-content-title">
         <span
           v-for="(item, index) in contents"
@@ -116,6 +129,7 @@ export default {
       maxRow: 8,
       pageIndex: 0,
       pages: [],
+      showPages: false,
       indentColumns: [],
       viceColumns: [],
       titleColumns: [],
@@ -203,7 +217,11 @@ export default {
       }
     },
     currentSentence: function () {
-      return this.$util.parseColumn(this.sentences[this.sentenceIndex])
+      if (this.isBook) {
+        return ''
+      } else {
+        return this.$util.parseColumn(this.sentences[this.sentenceIndex])
+      }
     }
   },
   mounted () {
@@ -229,6 +247,12 @@ export default {
         }
       } else {
         this.maxColumn = Math.floor((this.cw - 900) / this.fw)
+        if (this.maxColumn < 3) {
+          this.maxColumn = 3
+        }
+      }
+      if (this.pageIndex >= this.pages.length) {
+        this.pageIndex = this.pages.length - 1
       }
       this.showContent()
     }
@@ -273,20 +297,26 @@ export default {
   },
   methods: {
     fillTitle (title) {
-      var n = title.length - 2
-      return '┐ ' + '│ '.repeat(n) + `┘\n${title}\n┌ ` + '│ '.repeat(n) + '└'
+      return `※\n${title}\n◇`
+    },
+    fillPieceTitle (piece) {
+      var a = `\n${piece.author.name.full}`
+      if (piece.author.name.full == this.author) {
+        a = ''
+      }
+      return `※\n${piece.title}${a}\n◇`
     },
     fillDesc (desc) {
       if (desc.trim().length > 0) {
-        return `◎\n${desc}\n◎`
+        return `\n◎\n${desc}\n◎`
       } else {
-        return ''
+        return '\n'
       }
     },
     getItemContent(item) {
       this.srcContent += this.fillTitle(item.title) + this.fillDesc(item.desc) + '\n'
       item.pieces.forEach(piece => {
-        this.srcContent += this.fillTitle(piece.title)  + this.fillDesc(piece.desc) + '\n' + piece.content + '\n'
+        this.srcContent += this.fillPieceTitle(piece) + this.fillDesc(piece.desc) + '\n' + piece.content + '\n'
       })
       item.children.forEach(subitem => {
         this.getItemContent(subitem)
@@ -312,18 +342,22 @@ export default {
             var c = element.slice(i, i + this.maxRow)
             c = this.$util.parseColumn(c).replace('＠＠', '')
             const contentIndex = content.length * this.maxColumn + columnIndex
-            if (c[0] == '┐') {
+            if (c.trim() == '※') {
               this.titleColumns.push(contentIndex + 1)
             }
-            if (c[0] == '◎') {
+            if (c.trim() == '◎') {
               isDesc = !isDesc
-              this.viceColumns.push(contentIndex)
             }
             if (isDesc) {
               this.viceColumns.push(contentIndex)
             }
-            page.push(c)
-            columnIndex++
+            if (['※', '◇'].indexOf(c.trim()) != -1) {
+              c= ''
+            }
+            if (c != '◎') {
+              page.push(c)
+              columnIndex++
+            }
             if (columnIndex === this.maxColumn) {
               content.push(page)
               this.indentColumns.push(indent)
@@ -419,6 +453,9 @@ export default {
       }
       const str = val.charAt(2) + val.charAt(0) + val.charAt(3) + val.charAt(1)
       return str
+    },
+    randomView () {
+      this.$bus.emit('randomPiece')
     }
   }
 }
@@ -486,20 +523,10 @@ export default {
             from {height: 0px;}
             to {height: @line-height * 2;}
           }
-          @-webkit-keyframes slide-down
-          {
-            from {height: 0px;}
-            to {height: @line-height * 2;}
-          }
         }
         .bookmark-hide {
           animation: slide-up .2s ease-out 0s 1;
           @keyframes slide-up
-          {
-            from {height: @line-height * 2;}
-            to {height: 0px;}
-          }
-          @-webkit-keyframes slide-up
           {
             from {height: @line-height * 2;}
             to {height: 0px;}
@@ -572,13 +599,20 @@ export default {
       line-height: calc(@text-size * 2);
       cursor: pointer;
     }
-    .piece-title{
+    .piece-title {
+      display: block;
       background-color: @paper-bg;
       border: 4px @primary-color double;
       font-size: calc(@text-size * 1.2);
+      max-height: 40vh;
+      overflow: hidden;
       &:hover {
         background: @card-bg;
       }
+    }
+    .piece-title-long {
+      height: 60vh;
+      text-align: center;
     }
     .piece-content-title {
       position: relative;
@@ -604,6 +638,13 @@ export default {
       }
     }
   }
+  .piece-page-control {
+    position: absolute;
+    width: 100%;
+    left: 0px;
+    bottom: -20px;
+    z-index: 3;
+  }
   .piece-space {
     position: relative;
     display: inline-block;
@@ -619,12 +660,20 @@ export default {
       position: absolute;
       bottom: 0px;
       .page-number {
-        display: block;
-        margin: 12px auto;
-        line-height: @title-height;
         font-size: @font-middle;
         font-weight: bold;
-        width: @font-middle;
+      }
+      .page-numbers {
+        position: absolute;
+        width: 200px;
+        bottom: 48px;
+        left: 48px;
+        overflow-y: auto;
+        z-index: 3;
+      }
+      .current-number {
+        display: block;
+        .margin-v(12px)
       }
     }
   }

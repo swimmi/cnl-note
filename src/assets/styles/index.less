@@ -1,6 +1,6 @@
-@primary-color: #023092c4;
-@paper-bg: #f0fcfba2;
-@card-bg: #e5f1f1a9;
+@primary-color: #1d9265c4;
+@paper-bg: fade(tint(@primary-color, 80%), 60%);
+@card-bg: #ecebf3b6;
 @white-bg: #ffffff8a;
 @mask-bg: #0a0a0ae8;
 
@@ -10,7 +10,7 @@
 @text-grey: #aaa;
 @text-vice: #3541539d;
 
-@border-color: #b6b6b6;
+@border-color: #cfcbcb;
 
 @page-border: rgb(102, 102, 117);
 @bookmark-color: #f35151e1;
@@ -132,6 +132,19 @@
     }
   }
 }
+.label-text {
+  border: 4px @primary-color double;
+  background: @paper-bg;
+  padding: 8px;
+  cursor: pointer;
+  .hover-fade();
+}
+.margin-v(@px) {
+  margin: @px 0;
+}
+.margin-h(@px) {
+  margin: 0 @px;
+}
 .v-title {
   display: block;
   width: @v-title-width;
@@ -145,9 +158,7 @@
   font-size: @font-power;
 }
 .flex-center {
-  display: -webkit-flex;
   display: flex;
-  -webkit-justify-content: center;
   justify-content: center;
   align-items: center;
 }

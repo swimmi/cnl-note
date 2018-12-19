@@ -74,8 +74,24 @@ var splitToSentences = function (content) {
   return array
 }
 
+var getTimeStr = function () {
+  const str = '子丑寅卯辰巳午未申酉戌亥'
+  const time = new Date()
+  var h = time.getHours() + 1
+  if (h == 24) {
+    h = 0
+  }
+  const ch = str.charAt(Math.floor(h / 2))
+  const m = time.getMinutes()
+  var cm = Math.ceil(m / 15)
+  if (h % 2 == 1) {
+    cm += 4
+  }
+  return `${ch}时${parseNumber(cm)}刻`
+}
+
 export default {
   functions: {
-    parseNumber, parseColumn, splitToSentences
+    parseNumber, parseColumn, splitToSentences, getTimeStr
   }
 }

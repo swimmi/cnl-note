@@ -9,7 +9,6 @@
               v-model="book"
               filterable
               remote
-              size="small"
               style="width: 160px"
               @on-change="selectedBook"
               :placeholder="$str.collect_book_tip"
@@ -25,7 +24,7 @@
           </div>
           <div slot="content">
             <Collapse accordion v-if="catalog.length > 0">
-              <Panel class="panel" v-for="(item, index) in catalog" :key="item.title">
+              <Panel class="panel" v-for="(item, index) in catalog" :key="index">
                 <div class="panel-title" @click.stop>
                   <Input style="width: 120px" size="small" v-model="item.title"/>
                   <Checkbox v-model="item.show_desc">{{ $str.prologue }}</Checkbox>
@@ -100,6 +99,7 @@
           <Select
             ref="pieceSelect"
             v-model="pieceTitle"
+            class="piece-select"
             clearable
             filterable
             remote
@@ -112,11 +112,11 @@
         </FormItem>
         <div class="piece-span-container" ref="spanContainer">
           <draggable v-model="orderPieces">
-            <transition-group enter-active-class="animated flipInY" leave-active-class="animated flipOutY">
+            <transition-group enter-active-class="animated flipInX" leave-active-class="animated flipOutX">
               <span
                 class="piece-span"
                 v-for="(piece, index) in orderPieces"
-                :key="piece.id"
+                :key="piece._id"
                 draggable='true'
                 :title="$str.drag + $str.sort">
                 <b class="float-left">{{ index + 1 }}.</b>
@@ -241,6 +241,7 @@ export default {
       this.pieces = item.pieces
       this.orderPieces = item.pieces.slice()
       this.showDrawer = true
+      this.scrollToBottom()
     },
     queryPieces (query) {
       if (query !== '') {
@@ -259,13 +260,19 @@ export default {
     selectedPiece (val) {
       if (val) {
         var piece = {
-          id: val.value,
+          _id: val.value,
           title: val.label
         }
         this.orderPieces.push(piece)
         this.pieces.push(piece)
         this.$refs.pieceSelect.clearSingleSelect()
+        this.scrollToBottom()
       }
+    },
+    scrollToBottom () {
+      setTimeout(() => {
+        this.$refs.spanContainer.scrollTop = this.$refs.spanContainer.scrollHeight
+      }, 300)
     },
     removePiece (index) {
       this.orderPieces.splice(index, 1)
@@ -273,9 +280,8 @@ export default {
     },
     closeDrawer () {
       for (var i = 0; i < this.orderPieces.length; i++) {
-        this.pieces[i] = this.orderPieces[i].id
+        this.pieces[i] = this.orderPieces[i]
       }
-      console.log(this.catalog)
     },
     submit () {
       updateCatalog({'book': this.book, 'catalog': this.catalog}).then(res => {
@@ -305,15 +311,20 @@ export default {
     color: @text-grey;
   }
 }
+.piece-select {
+  margin-top: 16px;
+}
 .piece-span-container {
   width: 100%;
+  height: calc(100vh - 120px);
+  overflow-y: auto;
+  overflow-x: hidden;
   border-radius: @base-radius;
   border: 1px @border-color solid;
-  margin-top: 36px;
   .piece-span {
     position: relative;
     display: block;
-    border: 1px @border-color solid;
+    border: 1px @primary-color solid;
     border-radius: @base-radius;
     padding: 8px 12px;
     font-size: @subtext-size;

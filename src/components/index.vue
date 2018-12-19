@@ -1,11 +1,12 @@
 <template>
 <div class="layout">
   <div v-if="isReadMode" class="layout-read-mode animated zoomInUp">
-    <piece-view :id="readBookId == ''?viewPieceId:readBookId" :isBook="readBookId != ''" :readMode="true"></piece-view>
+    <Spin v-if="loadingContent"></Spin>
+    <piece-view v-else class="animated fadeInLeft" :id="readBookId == ''?viewPieceId:readBookId" :isBook="readBookId != ''" :readMode="true"></piece-view>
   </div>
   <Layout v-else class="layout-main-mode animated fadeInLeft">
     <Sider class="sider" width="240">
-      <div class="sider-title"><span>{{ title }}</span></div>
+      <div class="sider-title"><span>{{ $util.getTimeStr() }}</span></div>
       <Tabs class="sider-tabs" >
         <TabPane icon="ios-book-outline" name="menu">
           <Menu width="auto" active-name="recent_read" :open-names="['recent']" accordion class="menu" @on-select="action">
@@ -35,7 +36,7 @@
         <list-view class="animated slideInLeft" v-if="listData != null" :data="listData"></list-view>
       </div>
       <div class="content-right">
-        <Spin v-if="loadingContent"/>
+        <Spin v-if="loadingContent"></Spin>
         <piece-view v-else :id="readBookId == ''?viewPieceId:readBookId" :isBook="readBookId != ''" class="content-piece animated slideInRight"></piece-view>
       </div>
     </Content>
@@ -77,7 +78,7 @@ import ItemSearch from '@/components/pages/search'
 import ListView from '@/components/widgets/listview'
 import DashBoard from '@/components/widgets/dashboard'
 // api方法
-import { getPiece, getPieceRecent } from '@/api/piece'
+import { getPiece, getPieceRecent, getPieceRandom } from '@/api/piece'
 import { getBook, getCategoryBooks, getAuthorBooks } from '@/api/book'
 export default {
   components: {
@@ -152,6 +153,7 @@ export default {
       this.$bus.on('showList', this.showList)
       this.$bus.on('changeMode', this.changeMode)
       this.$bus.on('actionBook', this.actionBook)
+      this.$bus.on('randomPiece', this.randomPiece)
       this.$bus.on('actionPiece', this.actionPiece)
       this.loadPieceRecent('view')
       this.initCategory()
@@ -335,6 +337,13 @@ export default {
     },
     changeMode () {
       this.isReadMode = !this.isReadMode
+    },
+    randomPiece () {
+      getPieceRandom().then(res => {
+      if (res) {
+        this.showPiece(res[0]._id)
+      }
+    })
     },
     back () {
       this.actionName = ''

@@ -7,10 +7,15 @@
           <span
             v-for="(item, index) in random.titles"
             :key="index"
-            class="v-title"
-            @click="unlock(item)">{{ item }}</span>
+            class="v-title title-text"
+            @click="unlock(item)">
+            <marquee v-if="item.length >= 16" class="piece-title-long" scrollamount="15" direction="up">{{ item }}</marquee>
+            <span v-else>{{ item }}</span>
+          </span>
         </div>
-        <div class="sentence"><span class="v-title"> ﹃ {{ random.sentence }} ﹄ </span></div>
+        <div class="sentence">
+          <span class="v-title"> ﹃ {{ random.sentence }} ﹄ </span>
+        </div>
       </div>
     </div>
   </div>
@@ -56,9 +61,7 @@ export default {
 <style lang="less" scoped>
 .layout {
   height: 100vh;
-  display: -webkit-flex;
   display: flex;
-  -webkit-justify-content: center;
   justify-content: center;
   align-items: center;
   .loading-text {
@@ -73,10 +76,6 @@ export default {
     color: @primary-color;
     animation: showChar 3s 1;
     @keyframes showChar {
-      from {height: 300px;opacity: 1;}
-      to {height: 0px;opacity: 0;}
-    }
-    @-webkit-keyframes showChar {
       from {height: 300px;opacity: 1;}
       to {height: 0px;opacity: 0;}
     }
@@ -98,9 +97,13 @@ export default {
         font-weight: bold;
       }
     }
+    .piece-title-long {
+      height: 40vh;
+      text-align: center;
+    }
     .titles {
       margin-right: 48px;
-      span {
+      .title-text {
         display: inline-block;
         @pad: 4px;
         width: @title-size + @pad * 4;
@@ -113,7 +116,6 @@ export default {
         color: white;
         cursor: pointer;
         transition: all 1s;
-        -webkit-transition: all 1s;
         &:hover {
           background-color: white;
           color: @primary-color;

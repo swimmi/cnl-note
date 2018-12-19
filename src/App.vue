@@ -113,7 +113,7 @@ export default {
       this.random.sentence = this.$util.parseColumn(sentences[rand])
     },
     changeBg () {
-      this.theme = Math.ceil(Math.random() * 20)
+      this.theme = Math.floor(Math.random() * 20)
     },
     reload () {
       this.isRouterAlive = false
@@ -156,27 +156,22 @@ export default {
   }
   .power-btn {
     position: absolute;
-    width: 48px;
-    height: 48px;
+    @size: 40px;
+    width: @size;
+    height: @size;
     text-align: center;
-    line-height: 48px;
+    line-height: @size;
     bottom: 16px;
     right: 16px;
     background: @primary-color;
     border-radius: 50%;
     cursor: pointer;
     animation: rotate 60s linear infinite;
-    -webkit-animation: rotate 60s linear infinite;
     transition: all 1s;
     &:hover {
       background: darken(@primary-color, 10%);
     }
     @keyframes rotate {
-      0% {transform: rotateZ(0deg); background: @primary-color; box-shadow: @white-bg 0px 0px 0px;}
-      50% {transform: rotateZ(900deg); background: fade(@primary-color, 10%); box-shadow: @white-bg 0px 0px 60px;}
-      100% {transform: rotateZ(1800deg); background: @primary-color; box-shadow: @white-bg 0px 0px 0px;}
-    }
-    @-webkit-keyframes rotate {
       0% {transform: rotateZ(0deg); background: @primary-color; box-shadow: @white-bg 0px 0px 0px;}
       50% {transform: rotateZ(900deg); background: fade(@primary-color, 10%); box-shadow: @white-bg 0px 0px 60px;}
       100% {transform: rotateZ(1800deg); background: @primary-color; box-shadow: @white-bg 0px 0px 0px;}

@@ -183,7 +183,10 @@ router.post('/book/search', (req, res) => {
 })
 router.post('/book/catalog/get', (req, res) => {
   const id = req.body.book
-  models.Book.findById(id, {'catalog': 1}, (err, data) => {res.send(err?err:data)})
+  models.Book.findById(id).
+  select({'catalog': 1}).
+  populate('catalog.pieces catalog.children.pieces catalog.children.children.pieces', 'title').
+  exec((err, data) => {res.send(err?err:data)})
 })
 router.post('/book/catalog/update', (req, res) => {
   const id = req.body.book
