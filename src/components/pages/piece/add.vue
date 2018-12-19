@@ -148,6 +148,7 @@ export default {
     submit () {
       this.$refs['piece'].validate((valid) => {
         if (valid) {
+          this.piece.content.replace(/ /g, '')
           if (this.id == '') {
             addPiece({piece: this.piece}).then(res => {
               this.$refs.piece.resetFields()

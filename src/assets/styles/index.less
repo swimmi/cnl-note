@@ -1,8 +1,8 @@
 @primary-color: #1d9265c4;
-@paper-bg: fade(tint(@primary-color, 80%), 60%);
-@card-bg: #ecebf3b6;
+@paper-bg: fade(tint(@primary-color, 80%), 80%);
+@card-bg: #eaebe5c5;
 @white-bg: #ffffff8a;
-@mask-bg: #0a0a0ae8;
+@mask-bg: #000000f1;
 
 // text-color
 @text-black: #222;
@@ -203,6 +203,22 @@
   -o-filter: blur(@px);
   -ms-filter: blur(@px);
   filter: blur(@px);
+}
+.flash-fade {
+  animation: flashFade 5s infinite;
+  @keyframes flashFade {
+    0% { opacity: .5; }
+    50% { opacity: 1; }
+    100% { opacity: .5; }
+  }
+}
+.flash-text {
+  animation: flashText 3s infinite;
+  @keyframes flashText {
+    0% { color: @white-bg; }
+    50% { color: white; }
+    100% { color: @white-bg; }
+  }
 }
 
 @keyframes bgFloat {

@@ -74,6 +74,16 @@ var splitToSentences = function (content) {
   return array
 }
 
+var textMatch = function (text1, text2) {
+  const regex = new RegExp(/[^\u4e00-\u9fa5]/g)
+  var str1 = text1.replace(regex, '').trim()
+  var str2 = text2.replace(regex, '').trim()
+  if (str1 == str2) {
+    return true
+  }
+  return false
+}
+
 var getTimeStr = function () {
   const str = '子丑寅卯辰巳午未申酉戌亥'
   const time = new Date()
@@ -90,8 +100,10 @@ var getTimeStr = function () {
   return `${ch}时${parseNumber(cm)}刻`
 }
 
+var uploadPath = 'http://localhost:8080/api/'
+
 export default {
   functions: {
-    parseNumber, parseColumn, splitToSentences, getTimeStr
+    parseNumber, parseColumn, splitToSentences, getTimeStr, textMatch, uploadPath
   }
 }

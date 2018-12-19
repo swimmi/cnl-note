@@ -17,16 +17,22 @@ export const historyPiece = async function (params) {
   return (await api.post('/piece/history', params)).data
 }
 export const addBookmark = async function (params) {
-  return (await api.post('piece/bookmark/add', params)).data
+  return (await api.post('/piece/bookmark/add', params)).data
 }
 export const removeBookmark = async function (params) {
-  return (await api.post('piece/bookmark/remove', params)).data
+  return (await api.post('/piece/bookmark/remove', params)).data
 }
 export const savePieceHistory = async function (params) {
   return (await api.post('/piece/history/save', params)).data
 }
 export const recordPiece = async function (params) {
   return (await api.post('/upload', params)).data
+}
+export const uploadPieceRecords = async function (params) {
+  return (await api.post('/piece/record/upload', params))
+}
+export const updatePieceStatus = async function (params) {
+  return (await api.post('/piece/status/update', params)).data
 }
 // 查询类
 export const getPiece = async function (params) {

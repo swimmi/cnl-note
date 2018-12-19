@@ -7,6 +7,7 @@ var simple = {
   piece: '篇章',
   char: '文字',
   content: '内容',
+  all_content: '全文',
   src_content: '原文',
   category: '目录',
   index: '索引',
@@ -74,6 +75,9 @@ var simple = {
   pause: '暂停',
   resume: '继续',
   cancel: '取消',
+  favorite: '收藏',
+  understand: '理解',
+  recite: '背诵',
   // 提示
   no: '不',
   yes: '是',
@@ -91,7 +95,8 @@ var simple = {
   not_yet: '还未',
   collect_book_tip: '请选择要编录的书籍',
   template_tip: '标题模板（如\'第n章\')',
-  power_tip: '云想衣裳花想容···'
+  power_tip: '云想衣裳花想容···',
+  recite_tip: '请逐句默写'
 }
 var traditional = {
 }

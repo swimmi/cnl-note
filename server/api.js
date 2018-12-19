@@ -134,7 +134,17 @@ router.post('/piece/recent', (req, res) => {
 })
 // 篇章朗读
 router.post('/piece/record/upload', (req, res) => {
-
+  const id = req.body.id
+  const records = req.body.records
+  models.Piece.updateOne({_id: id}, {$set: {'records': records}}, (err, data) => {res.send(err?err:data)})
+})
+// 更新篇章状态
+router.post('/piece/status/update', (req, res) => {
+  const id = req.body.id
+  const type = req.body.type
+  const value = req.body.value
+  const typeStr = 'status.' + ['understand', 'recite', 'favorite'][type]
+  models.Piece.updateOne({_id: id}, {$set: {[typeStr]: value}}, (err, data) => {res.send(err?err:data)})
 })
 
 /**
@@ -286,8 +296,6 @@ router.get('/:dir/:name', function(req, res) {
   res.sendFile(name, options, function (err) {
     if (err) {
       console.log(err)
-    } else {
-      console.log('Sent:', name)
     }
   })
   console.log(__dirname)
@@ -296,12 +304,15 @@ router.post('/upload', function(req, res) {
   if (Object.keys(req.files).length == 0) {
     return res.status(400).send('No files were uploaded.')
   }
-  let file = req.files.file
-  file.mv(`uploads/records/` + file.name, function(err) {
-    if (err)
-      return res.status(500).send(err)
-    res.send('File uploaded!')
-  })
+  let files = req.files.file
+  if (Array.isArray(files)) {
+    files.forEach(file => {
+      file.mv(`uploads/records/` + file.name)
+    })
+  } else {
+    files.mv(`uploads/records/` + files.name)
+  }
+  res.send('File uploaded!')
 })
 
 module.exports = router

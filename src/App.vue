@@ -2,42 +2,30 @@
   <div id="app" :style="{backgroundImage: 'url(static/images/bg/'+ theme + '.jpg)'}">
     <router-view v-if="isRouterAlive" :piece="random.piece"/>
     <router-view v-else name="locker" :random="random"/>
+    <power-modal v-if="isPowerMode" :mode="mode" :params="params"></power-modal>
     <Icon
       class="change-btn"
       type="ios-sync"
-      size="16"
+      size="24"
       :title="$str.change + $str.background"
       @click="changeBg" />
-    <transition enter-active-class="fadeIn" leave-active-class="fadeOut">
-      <div class="power-mask animated" v-show="isPowerMode">
-        <textarea
-          ref="powerInput"
-          @keyup.enter="powerSend"
-          autofocus
-          class="power-input animated"
-          :class="{'shake': textPaired == -1, 'bounce': textPaired == 1}"
-          v-model="powerText"
-          :placeholder="$str.power_tip"></textarea>
-        <div class="pair-text-container">
-          <transition-group>
-            <span class="v-power-text pair-text" v-for="(item, index) in showPairTexts" :key="item + index">{{ item }}</span>
-          </transition-group>
-        </div>
-      </div>
-    </transition>
-      <Icon
-      class="power-btn animated"
+    <Icon
+      class="power-btn"
       :type="isPowerMode ? 'ios-moon' : 'ios-sunny'"
       size="24"
       color="#fff"
-      @click="switchPowerMode" />
+      @click="switchPowerMode()" />
+    <audio src="" hidden ref="audio" />
   </div>
 </template>
 <script>
+import PowerModal from '@/components/power'
 import { getPieceRandom } from '@/api/piece'
-import { pairText } from '@/api/common'
 export default {
   name: 'App',
+  components: {
+    PowerModal
+  },
   provide () {
     return {
       reload: this.reload
@@ -54,25 +42,23 @@ export default {
       },
       isRouterAlive: false,
       isPowerMode: false,
-      textPaired: 0,       // 匹配到上下句
-      powerText: '',
-      pairTexts: [],
-      maxSize: 16
-    }
-  },
-  computed: {
-    showPairTexts: function () {
-      return this.pairTexts.length > this.maxSize ? this.pairTexts.slice(- this.maxSize) : this.pairTexts
+      audioIndex: -1,        // 当前播放的音频索引
+      audioList: [],
+      isPlayingAudio: false,
+      maxSize: 16,
+      mode: 0,                     // Power模式的子模式
+      params: null                 // Power模式的参数
     }
   },
   mounted () {
+    this.$bus.on('stopAudio', this.stopAudio)
+    this.$bus.on('setAudioList', this.setAudioList)
+    this.$bus.on('controlAudio', this.controlAudio)
+    this.$bus.on('switchPowerMode', this.switchPowerMode)
     this.maxSize = Math.floor((document.documentElement.clientWidth - 400) / 60) - 2
     window.onresize = () => {
       this.maxSize = Math.floor((document.documentElement.clientWidth - 400) / 60) - 2
     }
-    this.$nextTick(() => {
-      this.$refs.powerInput.focus()
-    })
     getPieceRandom({size: 4}).then(res => {
       if (res) {
         res.forEach(item => {
@@ -85,27 +71,10 @@ export default {
     })
   },
   methods: {
-    switchPowerMode () {
+    switchPowerMode (mode, params) {
       this.isPowerMode = !this.isPowerMode
-      if (this.isPowerMode) {
-        this.$refs.powerInput.focus()
-      }
-    },
-    powerSend () {
-      var text = this.powerText.trim()
-      this.powerText = ''
-      pairText({'text': text}).then(res => {
-        if(res) {
-          this.textPaired = 1
-          const str = this.$util.parseColumn(res)
-          this.pairTexts.push(str)
-        } else {
-          this.textPaired = -1
-        }
-        setTimeout(() => {
-          this.textPaired = 0
-        }, 1000)
-      })
+      this.mode = mode || 0
+      this.params = params || null
     },
     randomSentence () {
       const sentences = this.$util.splitToSentences(this.random.piece.content)
@@ -120,7 +89,56 @@ export default {
       this.$nextTick(function () {
         this.isRouterAlive = true
       })
-    }
+    },
+    playAudio () {
+      if (this.$refs.audio) {
+        this.$refs.audio.src = this.audioList[this.audioIndex]
+        this.$refs.audio.play()
+        this.isPlayingAudio = true
+      }
+    },
+    stopAudio () {
+      this.isPlayingAudio = false
+      if (this.$refs.audio) {
+        this.$refs.audio.removeEventListener('ended', this.playAudioList)
+        this.$refs.audio.pause()
+        this.audioIndex = -1
+      }
+    },
+    controlAudio () {
+      if (this.$refs.audio) {
+        if (this.isPlayingAudio) {
+          this.$refs.audio.pause()
+        } else {
+          this.$refs.audio.play()
+        }
+        this.isPlayingAudio = !this.isPlayingAudio
+      }
+    },
+    playAudioList () {
+      if (this.audioIndex == -1 && this.$refs.audio) {
+        this.$refs.audio.addEventListener('ended', this.playAudioList)
+      }
+      this.audioIndex ++
+      if (this.audioIndex < this.audioList.length) {
+        if (this.audioIndex > 1) {
+          setTimeout(() => {
+            this.$bus.emit('playNext')
+          }, 500)
+        }
+        this.playAudio()
+      } else {
+        setTimeout(() => {
+          this.$bus.emit('playNext')
+        }, 500)
+        this.audioIndex = -1
+        this.$refs.audio.removeEventListener('ended', this.playAudioList)
+      }
+    },
+    setAudioList (list) {
+      this.audioList = list
+      this.playAudioList()
+    },
   }
 }
 </script>
@@ -138,21 +156,18 @@ export default {
     position: absolute;
     top: 8px;
     right: 8px;
-    padding: 8px;
+    padding: 4px;
     cursor: pointer;
-    transition: all 1s;
+    color: @primary-color;
+    animation: rotateZ 1s linear infinite;
+    .hover-fade();
     &:hover {
-      background: @card-bg;
+      background-color: @card-bg;
     }
-  }
-  .power-mask {
-    font-family: 'Xingkai';
-    position: absolute;
-    top: 0px;
-    left: 0px;
-    width: 100%;
-    height: 100%;
-    background-color: @mask-bg;
+    @keyframes rotateZ {
+      0% { transform: rotateZ(360deg) }
+      100% { transform: rotateZ(0deg) }
+    }
   }
   .power-btn {
     position: absolute;
@@ -166,52 +181,15 @@ export default {
     background: @primary-color;
     border-radius: 50%;
     cursor: pointer;
-    animation: rotate 60s linear infinite;
+    animation: rotatePower 60s linear infinite;
     transition: all 1s;
     &:hover {
       background: darken(@primary-color, 10%);
     }
-    @keyframes rotate {
+    @keyframes rotatePower {
       0% {transform: rotateZ(0deg); background: @primary-color; box-shadow: @white-bg 0px 0px 0px;}
       50% {transform: rotateZ(900deg); background: fade(@primary-color, 10%); box-shadow: @white-bg 0px 0px 60px;}
       100% {transform: rotateZ(1800deg); background: @primary-color; box-shadow: @white-bg 0px 0px 0px;}
-    }
-  }
-  .power-input {
-    .v-power-text();
-    float: right;
-    width: auto;
-    height: 80vh;
-    width: 48px;
-    text-align: center;
-    margin-right: 40px;
-    margin-top: calc(10vh + 18px);
-    border: none;
-    color: white;
-    background: transparent;
-    border-right: 2px @white-bg solid;
-    outline: none;
-    writing-mode: tb-rl;
-    overflow: hidden;
-    resize: none;
-  }
-  .pair-text-container {
-    .center-parent();
-    width: calc(100% - 440px);
-    height: 80vh;
-    text-align: right;
-    overflow: hidden;
-    .pair-text {
-      display: inline-block;
-      vertical-align: top;
-      margin: 16px;
-      color: @text-white;
-      transition: all 1s;
-      cursor: pointer;
-      &:hover {
-        color: white;
-        line-height: @font-power * 1.5;
-      }
     }
   }
 }

@@ -16,7 +16,8 @@
           size="24"
           :color="showRecordPlayer? 'red' : '#888'"
           :title="(showRecordPlayer? $str.stop : $str.start) + $str.record"
-          @click="showRecordPlayer = !showRecordPlayer"/>
+          v-show="!isBook && recordList.length > 0"
+          @click="startRecord"/>
         <transition enter-active-class="fadeIn" leave-active-class="fadeOut">
           <Icon
             class="icon-btn piece-action-btn animated"
@@ -79,14 +80,47 @@
           </span>
         </div>
       </div>
-      <div class="piece-stamp animated fadeIn" v-show="pageIndex == pages.length - 1"><span>{{ stampText(author) }}</span></div>
+      <div
+        class="piece-stamp-container"
+        v-show="pageIndex == pages.length - 1">
+        <div
+          class="piece-stamp piece-author-stamp animated fadeIn"
+          :title="$str.author + '：' + author">
+          <span>{{ stampText(author) }}</span>
+        </div>
+        <div v-show="status" class="piece-stamps">
+          <div
+            class="piece-stamp piece-understand-stamp animated fadeIn"
+            :class="{'stamp-off': !status.understand}"
+            :title="$str.understand + $str.all_content"
+            @click="understandPiece">
+            <span>{{ $str.understand + $str.all_content }}</span>
+          </div>
+          <div
+            v-show="status.understand"
+            class="piece-stamp piece-recite-stamp animated fadeIn"
+            :class="{'stamp-off': !status.recite}"
+            :title="$str.recite + $str.all_content"
+            @click="recitePiece">
+            <span>{{ stampText($str.recite + $str.all_content) }}</span>
+          </div>
+          <div
+            v-show="status.recite"
+            class="piece-stamp piece-favorite-stamp animated fadeIn"
+            :class="{'stamp-off': !status.favorite}"
+            :title="$str.favorite"
+            @click="favoritePiece">
+            <span>{{ $str.favorite }}</span>
+          </div>
+        </div>
+      </div>
     </div>
     <div class="piece-title-container">
       <span class="v-title piece-title">
         <marquee class="piece-title-long" v-if="title.length >= 16" scrollamount="15" direction="up">{{ title }}</marquee>
         <span v-else>{{ title }}</span>
       </span>
-      <div class="piece-content-title">
+      <div class="piece-content-title" v-show="readMode">
         <span
           v-for="(item, index) in contents"
           :key="index"
@@ -100,7 +134,7 @@
   </div>
 </template>
 <script>
-import { getPiece, getPieceRelate, addBookmark, removeBookmark, savePieceHistory } from '@/api/piece'
+import { getPiece, getPieceRelate, addBookmark, removeBookmark, savePieceHistory, updatePieceStatus } from '@/api/piece'
 import { getBookContent, saveBookHistory } from '@/api/book'
 export default {
   name: 'view-piece',
@@ -125,6 +159,7 @@ export default {
       contents: new Array(5).fill(this.$str.no_content),
       contentIndex: 0,
       author: '',
+      status: null,
       maxColumn: 8,
       maxRow: 8,
       pageIndex: 0,
@@ -140,16 +175,16 @@ export default {
       ch: 0,                // 窗口高度
       showPiece: false,
       sentences: [],        // 句子
-      sentenceIndex: 0,     // 句子索引
+      sentenceIndex: -1,     // 句子索引
       showRecordPlayer: false,
       isPlaying: true,
+      recordList: [],
       info: {               // 当前高亮处
         p: 0,               // 页码
         c: 0,               // 列数
         i: 0                // 高亮尾端位置，去除占位空格
       },
       isRowspan: false,     // 是否跨列
-      audio: null,
       loading: true
     }
   },
@@ -220,11 +255,17 @@ export default {
       if (this.isBook) {
         return ''
       } else {
-        return this.$util.parseColumn(this.sentences[this.sentenceIndex])
+        if (this.sentenceIndex >= 0 && this.sentenceIndex < this.sentences.length) {
+          return this.$util.parseColumn(this.sentences[this.sentenceIndex])
+        } else {
+          return ''
+        }
       }
     }
   },
   mounted () {
+    this.$bus.on('playNext', this.playNext)
+    this.$bus.on('recitePieceDone', this.recitePieceDone)
     this.cw = document.documentElement.clientWidth;
     this.ch = document.documentElement.clientHeight;
     this.maxRow = Math.floor((this.ch * 0.9 - 50) / this.fh)
@@ -251,9 +292,7 @@ export default {
           this.maxColumn = 3
         }
       }
-      if (this.pageIndex >= this.pages.length) {
-        this.pageIndex = this.pages.length - 1
-      }
+      this.pageIndex = 0          // 防止拉伸变化后pageIndex溢出
       this.showContent()
     }
     if (this.isBook) {
@@ -272,6 +311,7 @@ export default {
         this.title = res.title
         this.author = res.author.name.full
         this.srcContent = res.content
+        this.status = res.status
         if (res.hasOwnProperty('bookmarks')) {
           this.bookmarks = res.bookmarks.map(item => {
             return Math.floor(item.col / this.maxColumn) + '-' + (item.col % this.maxColumn)
@@ -289,8 +329,10 @@ export default {
         this.sentences = this.$util.splitToSentences(this.srcContent)
         this.showContent()
         // 高亮临时
-        this.info.i = this.currentSentence.replace(/ /g, '').length
-
+        // this.info.i = this.currentSentence.replace(/ /g, '').length
+        if (res.records) {
+          this.recordList = res.records
+        }
         savePieceHistory({id: this.id})
       })
     }
@@ -415,8 +457,21 @@ export default {
     expandPage () {
       this.$bus.emit('changeMode')
     },
+    startRecord () {
+      if (this.recordList.length > 0) {
+        if (!this.showRecordPlayer) {
+          this.$bus.emit('setAudioList', this.recordList)
+          this.isPlaying = true
+          this.showRecordPlayer = true
+        } else {
+          this.$bus.emit('stopAudio')
+          this.resetRecord()
+        }
+      }
+    },
     playRecord () {
       this.isPlaying = !this.isPlaying
+      this.$bus.emit('controlAudio')
     },
     playNext () {
       if (this.sentenceIndex < this.sentences.length - 1) {
@@ -440,9 +495,20 @@ export default {
             this.isRowspan = false
           }
         }
+        this.isPlaying = true
       } else {
-        this.showRecordPlayer = false
+        this.resetRecord()
       }
+    },
+    resetRecord () {
+      this.sentenceIndex = -1
+      this.info = {
+        p: 0,
+        c: 0,
+        i: 0
+      }
+      this.isPlaying = false
+      this.showRecordPlayer = false
     },
     stampText (val) {
       if (val.length == 3) {
@@ -453,6 +519,30 @@ export default {
       }
       const str = val.charAt(2) + val.charAt(0) + val.charAt(3) + val.charAt(1)
       return str
+    },
+    understandPiece () {
+      if (!this.status.understand) {
+        updatePieceStatus({'id': this.id, 'type': 0, 'value': true}).then(() => {
+          this.status.understand = true
+        })
+      }
+    },
+    recitePiece () {
+      this.$bus.emit('switchPowerMode', 1, {'id': this.id})
+    },
+    recitePieceDone () {
+      if (!this.status.recite) {
+        updatePieceStatus({'id': this.id, 'type': 1, 'value': true}).then(() => {
+          this.status.recite = true
+        })
+      }
+    },
+    favoritePiece () {
+      if (!this.status.favorite) {
+        updatePieceStatus({'id': this.id, 'type': 2, 'value': true}).then(() => {
+          this.status.favorite = true
+        })
+      }
     },
     randomView () {
       this.$bus.emit('randomPiece')
@@ -555,7 +645,7 @@ export default {
           }
           .column-indicator {
             background-color: fade(@primary-color, 0%);
-            // animation: flashFade 3s infinite;
+            animation: flashFade 1s infinite;
             @keyframes flashFade {
               0% { background-color: fade(@primary-color, 10%); }
               50% { background-color: fade(@primary-color, 30%); }
@@ -568,17 +658,56 @@ export default {
         }
       }
     }
-    .piece-stamp {
+    .piece-author-stamp {
       position: absolute;
       width: 64px;
       height: 64px;
       bottom: 22px;
       left: 22px;
+      background-image: url('~st/images/author_stamp.png');
+      span {
+        .flash-text();
+        color: white!important;
+      }
+    }
+    .piece-understand-stamp {
+      position: absolute;
+      width: 48px;
+      height: 120px;
+      bottom: 120px;
+      left: 30px;
+      background-image: url('~st/images/understand_stamp.png');
+    }
+    .piece-recite-stamp {
+      position: absolute;
+      width: 64px;
+      height: 100px;
+      bottom: 260px;
+      left: 22px;
+      background-image: url('~st/images/recite_stamp.png');
+      span {
+        margin-top: 4px;
+      }
+    }
+    .piece-favorite-stamp {
+      position: absolute;
+      width: 50px;
+      height: 90px;
+      bottom: 380px;
+      left: 28px;
+      background-image: url('~st/images/favorite_stamp.png');
+      span {
+        color: white!important;
+        font-size: 28px!important;
+        margin-top: 8px;
+        margin-left: 8px;
+      }
+    }
+    .piece-stamp {
       font-family: 'Zhuanti';
-      background-image: url('~st/images/stamp_bg.png');
       background-size: cover;
       span {
-        display: block;
+        .flex-center();
         text-align: center;
         padding: 4px;
         width: 100%;
@@ -586,7 +715,14 @@ export default {
         font-size: 24px;
         line-height: @title-height - 4px;
         color: @stamp-color;
+        .hover-fade();
+        cursor: pointer;
       }
+    }
+    .stamp-off {
+      filter: grayscale(100%);
+      opacity: .5;
+      .hover-fade();
     }
   }
   .piece-title-container {

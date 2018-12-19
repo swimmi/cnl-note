@@ -1,14 +1,13 @@
 <template>
   <div ref="record" class="drawer-form">
     <div class="text-row-container">
-      <span class="text-row text-title">{{ title }}</span>
       <span class="text-row">{{ textRows[cIndex - 1] || '...' }}</span>
       <span class="text-row current-text">{{ textRows[cIndex] || '...' }}</span>
       <span class="text-row">{{ textRows[cIndex + 1] || '...' }}</span>
     </div>
     <div class="record-container">
       <audio src="" hidden ref="audio" />
-      <div class="record-item-container">
+      <div class="record-item-container" ref="recordContainer">
         <div v-for="(item, index) in records" :key="index" class="record-item animated fadeInDown" :class="{'playing-item': index == playIndex}">
           <span class="record-text" @click="playRecord(item)">{{ (index + 1) + '. ' + item.text }}</span>
           <span class="record-action">
@@ -29,7 +28,7 @@
   </div>
 </template>
 <script>
-import { getPieceContent, updatePieceContent, recordPiece } from '@/api/piece'
+import { getPiece, updatePieceContent, uploadPieceRecords } from '@/api/piece'
 import Recorder from 'recorder-js'
 export default {
   props: {
@@ -41,6 +40,7 @@ export default {
   data () {
     return {
       title: '',
+      author: '',
       content: '',
       textRows: [],
       records: [],
@@ -53,11 +53,22 @@ export default {
     }
   },
   mounted () {
-    getPieceContent({id: this.id}).then(res => {
+    getPiece({id: this.id}).then(res => {
       if (res) {
         this.title = res.title
+        this.author = res.author.name.full
         this.content = res.content
         this.textRows = this.$util.splitToSentences(res.content)
+        this.textRows.unshift(this.title, this.author)
+        if (res.records.length > 0) {
+          res.records.forEach((item, index) => {
+            this.records.push({
+              text: this.textRows[index],
+              url: item
+            })
+          })
+          this.cIndex = res.records.length
+        }
       }
     })
     this.init()
@@ -87,15 +98,21 @@ export default {
           } else {
             this.cIndex ++
           }
-          this.uploadRecord()
+          setTimeout(() => {
+            this.$refs.recordContainer.scrollTop = this.$refs.recordContainer.scrollHeight
+          }, 500)
         })
       }
     },
     playRecord (item) {
-      const url = window.URL.createObjectURL(item.file)
-      this.$refs.audio.src = url
-      this.$refs.audio.onload = function(){
-        window.URL.revokeObjectURL(url)
+      if (item.hasOwnProperty('file')) {
+        const url = window.URL.createObjectURL(item.file)
+        this.$refs.audio.src = url
+        this.$refs.audio.onload = function(){
+          window.URL.revokeObjectURL(url)
+        }
+      } else {
+        this.$refs.audio.src = item.url
       }
       this.$refs.audio.play()
       this.isPlaying = true
@@ -109,14 +126,14 @@ export default {
     },
     playRecords () {
       if (this.playIndex == -1) {
-        this.$refs.audio.addEventListener('ended', this.playRecords);
+        this.$refs.audio.addEventListener('ended', this.playRecords)
       }
       this.playIndex ++
       if (this.playIndex < this.records.length) {
         this.playRecord(this.records[this.playIndex])
       } else  {
         this.playIndex = -1
-        this.$refs.audio.removeEventListener('ended', this.playRecords);
+        this.$refs.audio.removeEventListener('ended', this.playRecords)
       }
     },
     pauseRecords () {
@@ -127,19 +144,27 @@ export default {
       this.recorder.stop()
       this.isRecording = false
     },
-    uploadRecord () {
-      /*const config = {
+    
+    async submit () {
+      const config = {
         headers: {'Content-Type': 'multipart/form-data'}
       }
       var form = new FormData()
-      form.append('file', this.blob, `${Date.now() + '_' + this.cIndex}.wav`)
-      this.$http.post('/api/upload', form, config).then(res => {
-        console.log(res)
-      })*/
-    },
-    
-    submit () {
-
+      var recordList = []
+      this.records.forEach((item, index) => {
+        if (item.hasOwnProperty('file')) {
+          const root = this.$util.uploadPath + 'records/'
+          const name = `${this.id + '_' + index}.wav`
+          form.append('file', item.file, name)
+          recordList.push(root + name)
+        } else {
+          recordList.push(item.url)
+        }
+      })
+      await this.$http.post('/api/upload', form, config)
+      uploadPieceRecords({'id': this.id, 'records': recordList}).then(res => {
+        this.$bus.emit('back')
+      })
       this.$Message.success(this.$str.submit_success);
     }
   }

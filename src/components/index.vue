@@ -8,7 +8,7 @@
     <Sider class="sider" width="240">
       <div class="sider-title"><span>{{ $util.getTimeStr() }}</span></div>
       <Tabs class="sider-tabs" >
-        <TabPane icon="ios-book-outline" name="menu">
+        <TabPane :label="$str.menu" name="menu">
           <Menu width="auto" active-name="recent_read" :open-names="['recent']" accordion class="menu" @on-select="action">
             <Submenu name="recent">
                 <template slot="title">{{ $str.recent }}</template>
@@ -26,8 +26,10 @@
           </Menu>
           <dash-board class="dashboard"></dash-board>
         </TabPane>
-        <TabPane icon="ios-navigate-outline" name="index">
+        <TabPane :label="$str.index" name="index">
           <index-category @selectCategory="showCategoryItems" @selectAuthor="showAuthorItems"></index-category>
+        </TabPane>
+        <TabPane :label="$str.favorite" name="favorite">
         </TabPane>
       </Tabs>
     </Sider>
@@ -58,9 +60,6 @@
       </div>
     </Drawer>
   </Layout>
-  <div hidden class="audio-player-container">
-    <audio hidden ref="audioPlayer" src="static/music.mp3" preload="true" />
-  </div>
 </div>
 </template>
 <script>
@@ -340,10 +339,10 @@ export default {
     },
     randomPiece () {
       getPieceRandom().then(res => {
-      if (res) {
-        this.showPiece(res[0]._id)
-      }
-    })
+        if (res) {
+          this.showPiece(res[0]._id)
+        }
+      })
     },
     back () {
       this.actionName = ''
@@ -373,11 +372,6 @@ export default {
     font-size: @title-size;
     font-weight: bold;
     color: @primary-color;
-  }
-  .sider-tabs {
-    width: 100%;
-    margin: 0 auto;
-    height: calc(100% - @list-header-height);
   }
 }
 .layout {

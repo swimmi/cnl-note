@@ -11,7 +11,7 @@ const pieceSchema = Schema({
   period: Number,                             // 时期，作者佚名时
   category: Number,                           // 分类
   content: String,                            // 内容
-  locked: { type: Boolean, default: false},   // 是否锁定
+  locked: { type: Boolean, default: false },   // 是否锁定
   bookmarks: [
     {
       page: { type: Number },
@@ -21,8 +21,13 @@ const pieceSchema = Schema({
     }
   ],
   relates: [],                                // 相关内容
-  records: [],
-  hidden: Boolean,
+  records: [],                                // 朗读音频文件
+  status: {
+    understand: { type: Boolean, default: false },    // 已理解
+    recite: { type: Boolean, default: false },        // 可背诵
+    favorite: { type: Boolean, default: false }       // 是喜欢
+  },
+  hidden: { type: Boolean, default: false },
   lastViewAt: Date                            // 上次浏览
 }, {collection: 'pieces', timestamps: true})
 pieceSchema.pre('find', function(next) {
