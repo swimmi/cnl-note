@@ -11,14 +11,14 @@
         :placeholder="tipText"></textarea>
       <div class="pair-text-container">
         <transition-group>
-          <span class="v-power-text pair-text" v-for="(item, index) in showPairSentences" :key="item + index">{{ item }}</span>
+          <span class="v-power-text pair-text" v-for="(item, index) in showPairSentences" :key="item + index" @click="selectItem(index)">{{ item }}</span>
         </transition-group>
       </div>
     </div>
   </transition>
 </template>
 <script>
-import { getPiece } from '@/api/piece'
+import { getPiece, searchPiece } from '@/api/piece'
 import { pairText } from '@/api/common'
 export default {
   props: {
@@ -42,7 +42,10 @@ export default {
       reciteMode: {
         sentences: [],
         index: 0,
-      }
+      },
+      searchMode: {
+        results: []
+      },
     }
   },
   computed: {
@@ -61,7 +64,7 @@ export default {
       case 1:
         getPiece({'id': this.params.id}).then(res => {
           this.piece = res
-          this.tipText = `${this.$str.recite_tip}︻${this.piece.title}︼`
+          this.tipText = `${this.$str.recite_input_tip}︻${this.piece.title}︼`
           this.reciteMode.sentences = this.$util.splitToSentences(res.content)
         })
         break
@@ -109,7 +112,22 @@ export default {
       }, 1000)
     },
     searchText () {
-      
+      var keyword = this.powerText.trim()
+      searchPiece({'keyword': keyword}).then(res => {
+        if (res.length > 0) {
+          this.textPaired = 1
+          this.powerText = ''
+          this.searchMode.results = res
+          this.powerSentences = res.map(item => {
+            return `${item.author.name.full}︻ ${item.title} ︼`
+          })
+        } else {
+          this.textPaired = -1
+        }
+      })
+      setTimeout(() => {
+        this.textPaired = 0
+      }, 1000)
     },
     powerSend () {
       switch (this.mode) {
@@ -119,8 +137,23 @@ export default {
         case 1:
           this.reciteText()
           break;
-        case 2:
+        case 9:
           this.searchText()
+          break;
+      }
+    },
+    selectItem (index) {
+      switch (this.mode) {
+        case 0:
+          break
+        case 1:
+          break;
+        case 9:
+          const id = this.searchMode.results[index]._id
+          this.$bus.emit('actionPiece', 'view', id)
+          setTimeout(() => {
+            this.$bus.emit('switchPowerMode')
+          }, 300)
           break;
       }
     }
@@ -170,7 +203,6 @@ export default {
       cursor: pointer;
       &:hover {
         color: white;
-        line-height: @font-power * 1.5;
       }
     }
   }

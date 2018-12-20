@@ -9,7 +9,7 @@
     </FormItem>
     <FormItem :label="$str.author">
       <Select
-        v-model="piece.author"
+        v-model="piece.author._id"
         filterable
         remote
         label-in-value
@@ -41,7 +41,13 @@
       </Select>
     </FormItem>
     <FormItem :label="$str.content" prop="content">
-        <Input v-model="piece.content" type="textarea" :autosize="{minRows: 8, maxRows: 12}" :placeholder="$str.input_tip" onpaste="return false;"></Input>
+        <Input
+          v-model="piece.content"
+          type="textarea"
+          :autosize="{minRows: 8, maxRows: 12}"
+          :placeholder="$str.input_tip"
+          onpaste="return false;"
+          @on-change="filterText"></Input>
     </FormItem>
     <FormItem :label="$str.lock" prop="locked">
       <Switch v-model="piece.locked" size="large"/>
@@ -145,10 +151,12 @@ export default {
         }
       }
     },
+    filterText () {
+      this.piece.content = this.piece.content.replace(/[a-z]|[1-9]| /g, '')
+    },
     submit () {
       this.$refs['piece'].validate((valid) => {
         if (valid) {
-          this.piece.content.replace(/ /g, '')
           if (this.id == '') {
             addPiece({piece: this.piece}).then(res => {
               this.$refs.piece.resetFields()

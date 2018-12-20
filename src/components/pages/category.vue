@@ -60,6 +60,8 @@ export default {
 </script>
 <style lang="less" scoped>
 .category {
+  width: calc(100% + @scrollbar-width);
+  height: calc(100vh - 120px);
   overflow-y: auto;
   padding: 12px 24px;
 }

@@ -29,8 +29,8 @@
 <script>
 import PieceItem from '@/components/widgets/item/piece'
 import BookItem from '@/components/widgets/item/book'
-import { getRecentPieces, getAuthorPieces, getCategoryPieces, searchPiece } from '@/api/piece'
-import { getRecentBooks, getAuthorBooks, getCategoryBooks, searchBook } from '@/api/book'
+import { getRecentPieces, getAuthorPieces, getCategoryPieces } from '@/api/piece'
+import { getRecentBooks, getAuthorBooks, getCategoryBooks } from '@/api/book'
 export default {
   name: 'list-view',
   components: {
@@ -92,9 +92,6 @@ export default {
           break
         case 'category-items':
           this.fetch(val, [getCategoryPieces, getCategoryBooks], params)
-          break
-        case 'search-items':
-          this.fetch(val, [searchPiece, searchBook], params)
           break
       }
     },

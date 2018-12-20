@@ -97,8 +97,12 @@ var simple = {
   collect_book_tip: '请选择要编录的书籍',
   template_tip: '标题模板（如\'第n章\')',
   power_tip: '云想衣裳花想容···',
-  recite_tip: '请逐句默写',
+  recite_input_tip: '请逐句默写',
+  recite_tip: '请先默写全文',
   search_tip: '请输入搜索内容',
+  understand_tip: '请先提交翻译',
+  mark_desc_tip: '请输入标注内容',
+  mark_success: '标注成功'
 }
 var traditional = {
 }

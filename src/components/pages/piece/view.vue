@@ -68,9 +68,22 @@
             :class="{'column-indent': isIndent(index), 'column-vice': isVice(pi, index), 'column-title': isTitle(pi, index), 'mark-cursor': markable}">
             {{ column }}
             <div v-if="contentIndex == 0">
-              <span class="piece-mark" v-for="(item, mi) in getColumnMarks(pi, index)" :key="mi">
-                <span class="mark-line" :style="{'top': `${item.start * fh + 2}px`, 'height': `${item.text.length * fh - 4}px`}"></span>
-              </span>
+              <div
+                  class="piece-mark"
+                  :style="{'top': `${item.start * fh + 2}px`, 'height': `${item.text.length * fh - 4}px`}"
+                  v-for="(item, mi) in getColumnMarks(pi, index)"
+                  :key="mi">
+                <span
+                  class="v-title mark-desc"
+                  v-show="item.show">
+                  <Icon color="white" type="ios-eye" />
+                  {{ item.desc }}
+                  <Icon color="white" type="ios-close" />
+                </span>
+                <span
+                  class="mark-line">
+                </span>
+              </div>
             </div>
           </span>
           <transition enter-active-class="flipInY" leave-active-class="flipOutY">
@@ -95,30 +108,30 @@
         class="piece-stamp-container"
         v-show="pageIndex == pages.length - 1">
         <div
-          class="piece-stamp piece-author-stamp animated fadeIn"
+          class="piece-stamp piece-author-stamp animated pulse"
           :title="$str.author + '：' + author">
           <span>{{ stampText(author) }}</span>
         </div>
-        <div v-show="status" class="piece-stamps">
+        <div v-if="!isBook" class="piece-stamps">
           <div
-            class="piece-stamp piece-understand-stamp animated fadeIn"
-            :class="{'stamp-off': !status.understand}"
+            class="piece-stamp piece-understand-stamp"
+            :class="{'stamp-off': !piece.status.understand, 'animated pulse': piece.status.understand}"
             :title="$str.understand + $str.all_content"
             @click="understandPiece">
             <span>{{ $str.understand + $str.all_content }}</span>
           </div>
           <div
-            v-show="status.understand"
-            class="piece-stamp piece-recite-stamp animated fadeIn"
-            :class="{'stamp-off': !status.recite}"
+            v-show="piece.status.understand"
+            class="piece-stamp piece-recite-stamp"
+            :class="{'stamp-off': !piece.status.recite, 'animated pulse': piece.status.recite}"
             :title="$str.recite + $str.all_content"
             @click="recitePiece">
             <span>{{ stampText($str.recite + $str.all_content) }}</span>
           </div>
           <div
-            v-show="status.recite"
-            class="piece-stamp piece-favorite-stamp animated fadeIn"
-            :class="{'stamp-off': !status.favorite}"
+            v-show="piece.status.recite"
+            class="piece-stamp piece-favorite-stamp"
+            :class="{'stamp-off': !piece.status.favorite, 'animated pulse': piece.status.favorite}"
             :title="$str.favorite"
             @click="favoritePiece">
             <span>{{ $str.favorite }}</span>
@@ -131,6 +144,7 @@
         <marquee class="piece-title-long" v-if="title.length >= 16" scrollamount="15" direction="up">{{ title }}</marquee>
         <span v-else>{{ title }}</span>
       </span>
+      <span class="v-title piece-author">{{ author }}</span>
       <div v-if="contentIndex == 0" class="piece-action piece-action-right">
         <Icon
           class="icon-btn piece-action-btn"
@@ -138,7 +152,7 @@
           size="24"
           :color="markable? 'red' : '#888'"
           :title="$str.mark + $str.piece"
-          @click="startMark"/>
+          @click="markable = !markable"/>
       </div>
       <div class="piece-content-title" v-show="readMode">
         <span
@@ -174,12 +188,11 @@ export default {
   },
   data () {
     return {
-      title: '',
+      piece: null,
+      book: null,
       srcContent: '',
       contents: new Array(5).fill(this.$str.no_content),
       contentIndex: 0,
-      author: '',
-      status: null,
       maxColumn: 8,
       maxRow: 8,
       pageIndex: 0,
@@ -211,7 +224,7 @@ export default {
       markable: false,      // 可标注
       markStarted: false,   // 标注开始
       columnText: '',       // 选中列文本
-      markPageIndex: -1,  // 当前标注页
+      markPageIndex: -1,    // 当前标注页
       markColumnIndex: -1,  // 当前标注列
       startMarkIndex: 0,
       endMarkIndex: 0,
@@ -224,6 +237,12 @@ export default {
     }
   },
   computed: {
+    title () {
+      return this.isBook ? this.book.title : this.piece.title
+    },
+    author () {
+      return this.isBook ? this.book.author.name.full : this.piece.author.name.full
+    },
     isIndent () {
       return function (index) {
         return this.indentColumns[this.pageIndex].indexOf(index) != -1
@@ -251,7 +270,7 @@ export default {
         return false
       }
     },
-    upHeight () {
+    upHeight () {   // 朗读指示器距上高度
       return function (column, index) {
         const ccl = column.replace(/ /g, '').length
         const csl = this.currentSentence.replace(/ /g, '').length
@@ -270,7 +289,7 @@ export default {
         return len * this.fh
       }
     },
-    indicatorHeight () {
+    indicatorHeight () {  // 朗读指示器高度
       return function (column, index) {
         const csl = this.currentSentence.replace(/ /g, '').length
         var len = 0
@@ -336,47 +355,44 @@ export default {
     }
     if (this.isBook) {
       getBookContent({'book': this.id}).then(res => {
-        this.title = res.title
-        this.author = res.author.name.full
-        res.catalog.forEach(item => {
+        this.book = res
+        this.book.catalog.forEach(item => {
           this.getItemContent(item)
         })
         this.contents[0] = this.srcContent
-        if (res.hasOwnProperty('bookmarks')) {
-          this.bookmarks = res.bookmarks.map(item => {
+        if (this.book.hasOwnProperty('bookmarks')) {
+          this.bookmarks = this.book.bookmarks.map(item => {
             return Math.floor(item.col / this.maxColumn) + '-' + (item.col % this.maxColumn)
           })
         }
         this.showContent()
-        saveBookHistory({id: this.id})
+        saveBookHistory({'id': this.id})
       })
     } else {
       getPiece({'id': this.id}).then(res => {
-        this.title = res.title
-        this.author = res.author.name.full
-        this.srcContent = res.content
-        this.status = res.status
+        this.piece = res
+        this.srcContent = this.piece.content
         // 加入题序
-        if (res.desc != '') {
-          this.srcContent = this.fillDesc(res.desc) + '\n' + this.srcContent
+        if (this.piece.desc != '') {
+          this.srcContent = this.fillDesc(this.piece.desc) + '\n' + this.srcContent
         }
         // 加入相关内容
-        if (res.relates) {
-          res.relates.forEach(item => {
+        if (this.piece.relates) {
+          this.piece.relates.forEach(item => {
             this.contents[item.type + 1] = item.content
           })
         }
         // 加入标注内容
-        if (res.marks) {
-          this.markList = res.marks
+        if (this.piece.marks) {
+          this.markList = this.piece.marks
         }
         this.contents[0] = this.srcContent
         this.sentences = this.$util.splitToSentences(this.srcContent)
         this.showContent()
         this.loadMarks()
 
-        if (res.records) {
-          this.recordList = res.records
+        if (this.piece.records) {
+          this.recordList = this.piece.records
         }
         savePieceHistory({id: this.id})
       })
@@ -566,26 +582,33 @@ export default {
       return str
     },
     understandPiece () {
-      if (!this.status.understand) {
-        updatePieceStatus({'id': this.id, 'type': 0, 'value': true}).then(() => {
-          this.status.understand = true
-        })
+      if (!this.piece.status.understand) {
+        if(this.contents[2].trim() == this.$str.no_content) {
+          this.$Message.warning(this.$str.understand_tip);
+          this.$bus.emit('addPieceRelate', 1, this.id)
+        } else {
+          updatePieceStatus({'id': this.id, 'type': 0, 'value': true}).then(() => {
+            this.piece.status.understand = true
+            this.$Message.success(this.$str.mark_success);
+          })
+        }
       }
     },
     recitePiece () {
       this.$bus.emit('switchPowerMode', 1, {'id': this.id})
+      this.$Message.success(this.$str.recite_tip);
     },
     recitePieceDone () {
-      if (!this.status.recite) {
+      if (!this.piece.status.recite) {
         updatePieceStatus({'id': this.id, 'type': 1, 'value': true}).then(() => {
-          this.status.recite = true
+          this.piece.status.recite = true
         })
       }
     },
     favoritePiece () {
-      if (!this.status.favorite) {
+      if (!this.piece.status.favorite) {
         updatePieceStatus({'id': this.id, 'type': 2, 'value': true}).then(() => {
-          this.status.favorite = true
+          this.piece.status.favorite = true
         })
       }
     },
@@ -618,6 +641,7 @@ export default {
       var marks = []
       this.columnMarks.forEach(item => {
         if (item.p == pi && item.c == index) {
+          item.mark.show = false
           marks.push(item.mark)
         }
       })
@@ -663,9 +687,6 @@ export default {
         })
       }
     },
-    startMark () {
-      this.markable = !this.markable
-    },
     markIn (pi, index, event) {
       if (this.markable) {
         this.markPageIndex = pi
@@ -692,8 +713,38 @@ export default {
         const y = event.offsetY
         this.endMarkIndex = Math.floor(y / this.fh)
         this.markStarted = false
-        this.mark()
+        this.inputMarkDesc()
       }
+    },
+    inputMarkDesc () {
+      this.$Modal.confirm({
+        render: (h) => {
+          return h('Input', {
+            props: {
+              type: 'textarea',
+              rows: 3,
+              value: this.newMark.desc,
+              autofocus: true,
+              placeholder: this.$str.mark_desc_tip
+            },
+            on: {
+              input: (val) => {
+                this.newMark.desc = val
+              }
+            }
+          })
+        },
+        onOk: () => {
+          this.mark()
+        },
+        onCancel: () => {
+          this.newMark = {
+            text: '',
+            index: 0,
+            desc: ''
+          }
+        }
+      })
     },
     randomView () {
       this.$bus.emit('randomPiece')
@@ -809,11 +860,37 @@ export default {
             flex: 1;
           }
         }
-        .mark-line {
+        .piece-mark {
           position: absolute;
-          width: 2px;
-          left: 4px;
-          background-color: @stamp-color;
+          cursor: pointer;
+          span {
+            display: inline-block;
+          }
+          .mark-line {
+            position: absolute;
+            width: 2px;
+            height: 100%;
+            top: 0px;
+            left: -2px;
+            background-color: @stamp-color;
+            z-index: 3;
+            i {
+              position: absolute;
+              left: -16px;
+            }
+          }
+          .mark-desc {
+            position: absolute;
+            text-align: center;
+            left: -24px;
+            padding: 8px 0px;
+            width: auto;
+            color: white;
+            font-size: @subtext-size;
+            border-radius: @base-radius;
+            background-color: fade(@mask-bg, 50%);
+            cursor: pointer;
+          }
         }
       }
       .mark-cursor {
@@ -904,7 +981,8 @@ export default {
       font-size: calc(@text-size * 1.2);
       max-height: 40vh;
       overflow: hidden;
-      margin-bottom: 16px;
+      margin-bottom: 8px;
+      color: @text-black;
       &:hover {
         background: @card-bg;
       }
@@ -912,6 +990,16 @@ export default {
     .piece-title-long {
       height: 60vh;
       text-align: center;
+    }
+    .piece-author {
+      .piece-title();
+      border: 2px @primary-color solid;
+      padding: 2px;
+      background-color: @card-bg;
+      font-size: @text-size;
+      line-height: calc(@text-size * 1.5);
+      margin-bottom: 16px;
+      .hover-fade();
     }
     .piece-content-title {
       position: absolute;

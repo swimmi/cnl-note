@@ -20,6 +20,10 @@ export default {
     id: {
       type: String,
       required: true
+    },
+    type: {
+      type: Number,
+      required: false
     }
   },
   data () {
@@ -38,9 +42,12 @@ export default {
       if (res) {
         this.relate.srcContent = res.content
         res.relates.forEach(item => {
-          this.typeContents[item.type] = item.content
-          this.selectType(0)
+          this.typeContents[item.type] = item.getPieceContent
         })
+        if (this.type) {
+          this.relate.type = this.type
+        }
+        this.selectType(this.relate.type)
       }
     })
     this.loading = false

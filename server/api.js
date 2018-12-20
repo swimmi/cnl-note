@@ -41,7 +41,7 @@ router.post('/piece/search', (req, res) => {
   const key = req.body.keyword
   const reg = new RegExp(key)
   models.Piece.
-    find({$and: [{title: {$regex: reg}}]}).
+    find({$or: [{'title': {$regex: reg}}, {'content': {$regex: reg}}, {'name.full': {$regex: reg}}]}).
     populate({path: 'author', select: 'name.full'}).
     sort({'updatedAt': -1}).
     exec((err, data) => {res.send(err?err:data)})
@@ -182,7 +182,10 @@ router.post('/book/add', (req, res) => {
 })
 router.post('/book/get', (req, res) => {
   const id = req.body.id
-  models.Book.findById(id, (err, data) => {res.send(err?err:data)})
+  models.Book.
+    findById(id).
+    populate({path: 'author', select: 'name.full'}).
+    exec((err, data) => {res.send(err?err:data)})
 })
 router.get('/book/all', (req, res) => {
   models.Book.find({}).select('_id title').exec((err, data) => {res.send(err?err:data)})

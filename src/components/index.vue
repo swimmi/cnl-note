@@ -29,7 +29,7 @@
         <TabPane :label="$str.index" name="index">
           <index-category @selectCategory="showCategoryItems" @selectAuthor="showAuthorItems"></index-category>
         </TabPane>
-        <TabPane :label="$str.favorite" name="favorite">
+        <TabPane class="tab-pane" :label="$str.favorite" name="favorite">
         </TabPane>
       </Tabs>
     </Sider>
@@ -54,7 +54,7 @@
         <book-collect v-else-if="actionName === 'collect_book_drawer'" :ref="actionName"></book-collect>
         <piece-add v-else-if="['add_piece_drawer', 'modify_piece_drawer'].indexOf(actionName) != -1" :ref="actionName" :id="actionName === 'modify_piece_drawer' ? pieceToDo : ''"></piece-add>
         <piece-edit v-else-if="actionName === 'edit_piece_drawer'" :ref="actionName" :id="pieceToDo"></piece-edit>
-        <piece-relate v-else-if="actionName === 'relate_piece_drawer'" :ref="actionName" :id="pieceToDo"></piece-relate>
+        <piece-relate v-else-if="actionName === 'relate_piece_drawer'" :ref="actionName" :id="pieceToDo" :type="relateType"></piece-relate>
         <piece-record v-else-if="actionName === 'record_piece_drawer'" :ref="actionName" :id="pieceToDo"></piece-record>
       </div>
     </Drawer>
@@ -118,6 +118,7 @@ export default {
       drawerTitle: '',      // drawer标题
       bookSeries: [],       // 书籍卷册
       pieceToDo: '',        // 待操作的篇章
+      relateType: 0,        // 相关内容类型
       isReadMode: true,     // 阅读模式
       drawerStyles: {
         padding: '0px',
@@ -151,6 +152,7 @@ export default {
       this.$bus.on('actionBook', this.actionBook)
       this.$bus.on('randomPiece', this.randomPiece)
       this.$bus.on('actionPiece', this.actionPiece)
+      this.$bus.on('addPieceRelate', this.addPieceRelate)
       this.loadPieceRecent('view')
       this.initCategory()
       this.loadingContent = false
@@ -313,6 +315,15 @@ export default {
           this.action(name + '_book_drawer')
           break
       }
+    },
+    addPieceRelate (type, id) {
+      if (this.isReadMode) {
+        this.isReadMode = false
+      }
+      this.relateType = type
+      setTimeout(() => {
+        this.actionPiece('relate', id)
+      }, 500)
     },
     showList (title, type, params) {
       this.listData = null
