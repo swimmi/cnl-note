@@ -2,7 +2,7 @@
   <Spin v-if="loading" />
   <div v-else class="piece-page" ref="page">
     <div class="piece-space">
-      <div class="piece-action">
+      <div class="piece-action piece-action-left">
         <Icon
           class="icon-btn piece-action-btn"
           :type="readMode?'ios-paper':'ios-book'"
@@ -55,12 +55,23 @@
     <div class="piece-content" :class="{'animated fadeIn': showPiece}">
       <Slider show-stops v-show="pages.length > 1 && showPages" class="piece-page-control" :max="pages.length - 1" v-model="pageIndex"></Slider>
       <div class="page animated fadeIn" v-show="pageIndex == pi" v-for="(page, pi) in pages" :key="pi">
-        <div class="column" v-for="(column, index) in page">
-          <span class="bookmark-space" :class="{'bookmark': indexBookmark(pi, index) > -1}" @click="bookmark(pi, index, column)" :title="$str.add + $str.bookmark"></span>
+        <div
+          class="column"
+          v-for="(column, index) in page"
+          @mousedown.capture="markIn(pi, index, $event)"
+          @mousemove.capture="markMove(pi, index, $event)"
+          @mouseup.capture="markOut"
+          @mouseleave.capture="markOut">
+          <span class="column-text bookmark-space" :class="{'bookmark': indexBookmark(pi, index) > -1}" @click="bookmark(pi, index, column)" :title="$str.add + $str.bookmark"></span>
           <span
-            class="v-text"
-            :class="{'column-indent': isIndent(index), 'column-vice': isVice(pi, index), 'column-title': isTitle(pi, index)}">
+            class="column-text v-text"
+            :class="{'column-indent': isIndent(index), 'column-vice': isVice(pi, index), 'column-title': isTitle(pi, index), 'mark-cursor': markable}">
             {{ column }}
+            <div v-if="contentIndex == 0">
+              <span class="piece-mark" v-for="(item, mi) in getColumnMarks(pi, index)" :key="mi">
+                <span class="mark-line" :style="{'top': `${item.start * fh + 2}px`, 'height': `${item.text.length * fh - 4}px`}"></span>
+              </span>
+            </div>
           </span>
           <transition enter-active-class="flipInY" leave-active-class="flipOutY">
             <div
@@ -73,7 +84,7 @@
           </transition>
         </div>
         <div class="column" v-for="n in maxColumn - page.length">
-          <span class="v-text">
+          <span class="column-text v-text">
             <transition enter-active-class="flipInY" leave-active-class="flipOutY">
               <div class="column-mask animated" v-show="showRecordPlayer"><div class="column-mask-down"></div></div>
             </transition>
@@ -120,6 +131,15 @@
         <marquee class="piece-title-long" v-if="title.length >= 16" scrollamount="15" direction="up">{{ title }}</marquee>
         <span v-else>{{ title }}</span>
       </span>
+      <div v-if="contentIndex == 0" class="piece-action piece-action-right">
+        <Icon
+          class="icon-btn piece-action-btn"
+          type="ios-color-wand"
+          size="24"
+          :color="markable? 'red' : '#888'"
+          :title="$str.mark + $str.piece"
+          @click="startMark"/>
+      </div>
       <div class="piece-content-title" v-show="readMode">
         <span
           v-for="(item, index) in contents"
@@ -134,8 +154,8 @@
   </div>
 </template>
 <script>
-import { getPiece, getPieceRelate, addBookmark, removeBookmark, savePieceHistory, updatePieceStatus } from '@/api/piece'
-import { getBookContent, saveBookHistory } from '@/api/book'
+import { getPiece, getPieceRelate, addPieceMark, savePieceHistory, updatePieceStatus } from '@/api/piece'
+import { getBookContent, addBookmark, removeBookmark, saveBookHistory } from '@/api/book'
 export default {
   name: 'view-piece',
   props: {
@@ -165,17 +185,18 @@ export default {
       pageIndex: 0,
       pages: [],
       showPages: false,
+      bookmarks: [],
       indentColumns: [],
       viceColumns: [],
       titleColumns: [],
-      bookmarks: [],
       fh: 22,               // 字高
       fw: 36,               // 字宽
       cw: 0,                // 窗口宽度
       ch: 0,                // 窗口高度
       showPiece: false,
+
       sentences: [],        // 句子
-      sentenceIndex: -1,     // 句子索引
+      sentenceIndex: -1,    // 句子索引
       showRecordPlayer: false,
       isPlaying: true,
       recordList: [],
@@ -185,6 +206,20 @@ export default {
         i: 0                // 高亮尾端位置，去除占位空格
       },
       isRowspan: false,     // 是否跨列
+      markList: [],         // 标注
+      columnMarks: [],      // 标注列表
+      markable: false,      // 可标注
+      markStarted: false,   // 标注开始
+      columnText: '',       // 选中列文本
+      markPageIndex: -1,  // 当前标注页
+      markColumnIndex: -1,  // 当前标注列
+      startMarkIndex: 0,
+      endMarkIndex: 0,
+      newMark: {            // 新增标注
+        text: '',
+        index: 0,
+        desc: ''
+      },
       loading: true
     }
   },
@@ -264,7 +299,7 @@ export default {
     }
   },
   mounted () {
-    this.$bus.on('playNext', this.playNext)
+    this.$bus.on('playNextRecord', this.playNextRecord)
     this.$bus.on('recitePieceDone', this.recitePieceDone)
     this.cw = document.documentElement.clientWidth;
     this.ch = document.documentElement.clientHeight;
@@ -288,8 +323,12 @@ export default {
         }
       } else {
         this.maxColumn = Math.floor((this.cw - 900) / this.fw)
+        this.maxRow = Math.floor((this.ch * 0.9 - 50) / this.fh)
         if (this.maxColumn < 3) {
           this.maxColumn = 3
+        }
+        if (this.maxRow < 8) {
+          this.maxRow = 8
         }
       }
       this.pageIndex = 0          // 防止拉伸变化后pageIndex溢出
@@ -303,6 +342,11 @@ export default {
           this.getItemContent(item)
         })
         this.contents[0] = this.srcContent
+        if (res.hasOwnProperty('bookmarks')) {
+          this.bookmarks = res.bookmarks.map(item => {
+            return Math.floor(item.col / this.maxColumn) + '-' + (item.col % this.maxColumn)
+          })
+        }
         this.showContent()
         saveBookHistory({id: this.id})
       })
@@ -312,24 +356,25 @@ export default {
         this.author = res.author.name.full
         this.srcContent = res.content
         this.status = res.status
-        if (res.hasOwnProperty('bookmarks')) {
-          this.bookmarks = res.bookmarks.map(item => {
-            return Math.floor(item.col / this.maxColumn) + '-' + (item.col % this.maxColumn)
-          })
-        }
         // 加入题序
         if (res.desc != '') {
           this.srcContent = this.fillDesc(res.desc) + '\n' + this.srcContent
         }
         // 加入相关内容
-        res.relates.forEach(item => {
-          this.contents[item.type + 1] = item.content
-        })
+        if (res.relates) {
+          res.relates.forEach(item => {
+            this.contents[item.type + 1] = item.content
+          })
+        }
+        // 加入标注内容
+        if (res.marks) {
+          this.markList = res.marks
+        }
         this.contents[0] = this.srcContent
         this.sentences = this.$util.splitToSentences(this.srcContent)
         this.showContent()
-        // 高亮临时
-        // this.info.i = this.currentSentence.replace(/ /g, '').length
+        this.loadMarks()
+
         if (res.records) {
           this.recordList = res.records
         }
@@ -473,7 +518,7 @@ export default {
       this.isPlaying = !this.isPlaying
       this.$bus.emit('controlAudio')
     },
-    playNext () {
+    playNextRecord () {
       if (this.sentenceIndex < this.sentences.length - 1) {
         this.sentenceIndex ++                                           // 移至下一句
         const csl = this.currentSentence.replace(/ /g, '').length       // 当前句长度
@@ -544,6 +589,112 @@ export default {
         })
       }
     },
+    loadMarks () {
+      for (var p = 0; p < this.pages.length; p++) {
+        const page = this.pages[p]
+        for (var c = 0; c < page.length; c++) {
+          const column = page[c]
+          for (var i = 0; i < this.markList.length; i++) {
+            var item = this.markList[i]
+            var start = column.replace(/ /g, '').indexOf(item.text)
+            if (start != -1) {
+              item.index -=1
+            }
+            if (item.index < 0) {
+              item.start = start + 1
+              this.columnMarks.push({
+                p: p,
+                c: c,
+                mark: item
+              })
+              this.markList.splice(i, 1)
+              i--
+            }
+          }
+        }
+      }
+    },
+    getColumnMarks (pi, index) {
+      var marks = []
+      this.columnMarks.forEach(item => {
+        if (item.p == pi && item.c == index) {
+          marks.push(item.mark)
+        }
+      })
+      if (pi == this.markPageIndex && index == this.markColumnIndex && this.newMark.text.length > 0) {
+        marks.push(this.newMark)
+      }
+      return marks
+    },
+    getRangeText (text, start, end) {
+      if (start > end) {
+        start = [end, end = start][0]
+      }
+      if (start == end) {
+        end ++
+      }
+      return text.substring(start, end)
+    },
+    mark () {
+      const text = this.getRangeText(this.columnText, this.startMarkIndex, this.endMarkIndex)
+      // 获取当前列之前文本中包含标注词数量
+      var allText = ''
+      for (var p = 0; p <= this.markPageIndex; p ++) {
+        for (var c= 0; c < this.markColumnIndex; c ++) {
+          allText += this.pages[p][c].trim()
+        }
+      }
+      var count = this.$util.countMatch(text, allText.replace(/ /g, ''))
+      this.newMark.index = count
+      // 获取当前列之中文本标注词数量
+      const startIndex = Math.min(this.startMarkIndex, this.endMarkIndex)
+      allText = this.columnText.substring(0, startIndex)
+      count = this.$util.countMatch(text, allText)
+      this.newMark.index += count
+      if (text.trim() != '') {
+        addPieceMark({'id': this.id, 'mark': this.newMark}).then(res => {
+          this.markList.push(this.newMark)
+          this.loadMarks()
+          this.newMark = {
+            text: '',
+            index: 0,
+            desc: ''
+          }
+        })
+      }
+    },
+    startMark () {
+      this.markable = !this.markable
+    },
+    markIn (pi, index, event) {
+      if (this.markable) {
+        this.markPageIndex = pi
+        this.markColumnIndex = index
+        this.columnText = this.pages[pi][index].replace(/ /g, '').trim()
+        const y = event.offsetY
+        this.startMarkIndex = Math.floor(y / this.fh) - 1
+        this.markStarted = true
+      }
+    },
+    markMove (pi, index, event) {
+      if (this.markStarted) {
+        const y = event.offsetY
+        var moveIndex = Math.floor(y / this.fh)
+        const text = this.getRangeText(this.columnText, this.startMarkIndex, moveIndex)
+        if (text != this.newMark.text) {
+          this.newMark.text = text
+          this.newMark.start = moveIndex > this.startMarkIndex? this.startMarkIndex + 1 : moveIndex + 1
+        }
+      }
+    },
+    markOut (event) {
+      if (this.markable && this.markStarted) {
+        const y = event.offsetY
+        this.endMarkIndex = Math.floor(y / this.fh)
+        this.markStarted = false
+        this.mark()
+      }
+    },
     randomView () {
       this.$bus.emit('randomPiece')
     }
@@ -576,7 +727,6 @@ export default {
       width: 100%;
       height: 100%;
       background-color: @paper-bg;
-      overflow: hidden;
       .column-indent {
         position: relative;
         top: @line-height * 2;
@@ -585,12 +735,15 @@ export default {
         position: relative;
         float: right;
         height: 100%;
-        padding: @base-size 8px;
         text-align: center;
         border-left: 1px @primary-color solid;
         color: @text-black;
+        .column-text {
+          width: @line-width;
+          padding: @base-size 8px;
+        }
         .decoration {
-          position: absolute;
+          .center-horizontal();
           display: block;
           width: @text-size + 2px;
           height: @line-height * 2;
@@ -656,6 +809,15 @@ export default {
             flex: 1;
           }
         }
+        .mark-line {
+          position: absolute;
+          width: 2px;
+          left: 4px;
+          background-color: @stamp-color;
+        }
+      }
+      .mark-cursor {
+        cursor: url('~@/assets/mark_cursor.png'), url('~@/assets/mark_cursor.png'), auto;
       }
     }
     .piece-author-stamp {
@@ -742,6 +904,7 @@ export default {
       font-size: calc(@text-size * 1.2);
       max-height: 40vh;
       overflow: hidden;
+      margin-bottom: 16px;
       &:hover {
         background: @card-bg;
       }
@@ -751,8 +914,8 @@ export default {
       text-align: center;
     }
     .piece-content-title {
-      position: relative;
-      top: @title-height;
+      position: absolute;
+      bottom: @title-height;
       .content-title {
         margin-top: @title-height / 2;
         width: @v-title-width + @title-padding * 1.5;
@@ -781,17 +944,17 @@ export default {
     bottom: -20px;
     z-index: 3;
   }
+  .piece-action {
+    .piece-action-btn {
+      display: block;
+      margin-bottom: 16px;
+    }
+  }
   .piece-space {
     position: relative;
     display: inline-block;
     vertical-align: top;
     height: 100%;
-    .piece-action {
-      .piece-action-btn {
-        display: block;
-        margin-bottom: 16px;
-      }
-    }
     .page-control {
       position: absolute;
       bottom: 0px;

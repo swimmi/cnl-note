@@ -12,16 +12,15 @@ const pieceSchema = Schema({
   category: Number,                           // 分类
   content: String,                            // 内容
   locked: { type: Boolean, default: false },   // 是否锁定
-  bookmarks: [
-    {
-      page: { type: Number },
-      col: { type: Number },
-      text: { type: String },
-      type: { type: Number }
-    }
-  ],
   relates: [],                                // 相关内容
   records: [],                                // 朗读音频文件
+  marks: [                                    // 批注
+    {
+      text: { type: String },
+      index: { type: Number },
+      desc: { type: String }
+    }
+  ],                                  
   status: {
     understand: { type: Boolean, default: false },    // 已理解
     recite: { type: Boolean, default: false },        // 可背诵
@@ -66,6 +65,14 @@ const bookSchema = Schema({
   tags: [String],
   prologue: String,
   introduce: String,
+  bookmarks: [
+    {
+      page: { type: Number },
+      col: { type: Number },
+      text: { type: String },
+      type: { type: Number }
+    }
+  ],
   catalog: [
     {
       title: String,

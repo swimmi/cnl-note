@@ -40,7 +40,7 @@ export default {
     border: none;
     cursor: pointer;
     p {
-      color: @primary-color;
+      color: @iview-color;
       width: 100%;
       text-align: center;
     }

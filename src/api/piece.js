@@ -16,11 +16,14 @@ export const updatePieceRelate = async function (params) {
 export const historyPiece = async function (params) {
   return (await api.post('/piece/history', params)).data
 }
-export const addBookmark = async function (params) {
-  return (await api.post('/piece/bookmark/add', params)).data
+export const addPieceMark = async function (params) {
+  return (await api.post('/piece/mark/add', params)).data
 }
-export const removeBookmark = async function (params) {
-  return (await api.post('/piece/bookmark/remove', params)).data
+export const updatePieceMark = async function (params) {
+  return (await api.post('/piece/mark/update', params)).data
+}
+export const removePieceMark = async function (params) {
+  return (await api.post('/piece/mark/remove', params)).data
 }
 export const savePieceHistory = async function (params) {
   return (await api.post('/piece/history/save', params)).data

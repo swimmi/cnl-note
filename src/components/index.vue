@@ -22,7 +22,7 @@
                 <MenuItem name="add_book_drawer"><span>{{ $str.add_book }}</span></MenuItem>
                 <MenuItem name="collect_book_drawer"><span>{{ $str.collect_book }}</span></MenuItem>
             </Submenu>
-            <MenuItem name="search_item_drawer"><span>{{ $str.search }}</span></MenuItem>
+            <MenuItem name="search"><span>{{ $str.search }}</span></MenuItem>
           </Menu>
           <dash-board class="dashboard"></dash-board>
         </TabPane>
@@ -56,7 +56,6 @@
         <piece-edit v-else-if="actionName === 'edit_piece_drawer'" :ref="actionName" :id="pieceToDo"></piece-edit>
         <piece-relate v-else-if="actionName === 'relate_piece_drawer'" :ref="actionName" :id="pieceToDo"></piece-relate>
         <piece-record v-else-if="actionName === 'record_piece_drawer'" :ref="actionName" :id="pieceToDo"></piece-record>
-        <item-search v-else-if="actionName === 'search_item_drawer'" :ref="actionName"></item-search>
       </div>
     </Drawer>
   </Layout>
@@ -73,7 +72,6 @@ import PieceRelate from '@/components/pages/piece/relate'
 import PieceRecord from '@/components/pages/piece/record'
 import PieceView from '@/components/pages/piece/view'
 import IndexCategory from '@/components/pages/category'
-import ItemSearch from '@/components/pages/search'
 import ListView from '@/components/widgets/listview'
 import DashBoard from '@/components/widgets/dashboard'
 // api方法
@@ -90,7 +88,6 @@ export default {
     PieceRelate,            // 篇章相关
     PieceRecord,            // 篇章朗读
     PieceView,              // 查看篇章
-    ItemSearch,             // 搜索书篇
     ListView,               // 项目列表
     DashBoard               // 面板数据
   },
@@ -185,7 +182,6 @@ export default {
     action (name) {
       let dic = {
         'add': this.$str.add,
-        'search': this.$str.search,
         'edit': this.$str.edit,
         'modify': this.$str.modify,
         'content': this.$str.content,
@@ -194,8 +190,7 @@ export default {
         'collect': this.$str.collect,
         'piece': this.$str.piece,
         'relate': this.$str.relate,
-        'record': this.$str.record,
-        'item': this.$str.book_piece
+        'record': this.$str.record
       }
       if (name.indexOf('drawer') > -1) {
         const names = name.split('_')
@@ -209,6 +204,9 @@ export default {
             break
           case 'recent_add':
             this.loadPieceRecent('create')
+            break
+          case 'search':
+            this.$bus.emit('switchPowerMode', 9)
             break
         }
       }
@@ -371,7 +369,7 @@ export default {
     line-height: @list-header-height;
     font-size: @title-size;
     font-weight: bold;
-    color: @primary-color;
+    color: @iview-color;
   }
 }
 .layout {
@@ -424,9 +422,8 @@ export default {
 }
 .ivu-menu-item-active:not(.ivu-menu-submenu) {
   background: none!important;
-  color: @primary-color!important;
   &:after {
-    background: @primary-color!important;
+    background: none!important;
   }
 }
 </style>

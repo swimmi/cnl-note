@@ -25,7 +25,7 @@ export default {
     mode: {
       type: Number,
       required: true,
-      default: 0            // 0: 对句模式； 1：背诵模式
+      default: 0            // 0:对句 1:默写 9:搜索
     },
     params: {
       type: Object,
@@ -64,6 +64,9 @@ export default {
           this.tipText = `${this.$str.recite_tip}︻${this.piece.title}︼`
           this.reciteMode.sentences = this.$util.splitToSentences(res.content)
         })
+        break
+      case 9:
+        this.tipText = this.$str.search_tip
         break
     }
   },
@@ -105,6 +108,9 @@ export default {
         this.textPaired = 0
       }, 1000)
     },
+    searchText () {
+      
+    },
     powerSend () {
       switch (this.mode) {
         case 0:
@@ -112,6 +118,9 @@ export default {
           break
         case 1:
           this.reciteText()
+          break;
+        case 2:
+          this.searchText()
           break;
       }
     }

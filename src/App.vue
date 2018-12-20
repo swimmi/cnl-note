@@ -92,7 +92,8 @@ export default {
     },
     playAudio () {
       if (this.$refs.audio) {
-        this.$refs.audio.src = this.audioList[this.audioIndex]
+        const root = this.$util.uploadPath + 'records/'
+        this.$refs.audio.src = root + this.audioList[this.audioIndex]
         this.$refs.audio.play()
         this.isPlayingAudio = true
       }
@@ -123,13 +124,13 @@ export default {
       if (this.audioIndex < this.audioList.length) {
         if (this.audioIndex > 1) {
           setTimeout(() => {
-            this.$bus.emit('playNext')
+            this.$bus.emit('playNextRecord')
           }, 500)
         }
         this.playAudio()
       } else {
         setTimeout(() => {
-          this.$bus.emit('playNext')
+          this.$bus.emit('playNextRecord')
         }, 500)
         this.audioIndex = -1
         this.$refs.audio.removeEventListener('ended', this.playAudioList)

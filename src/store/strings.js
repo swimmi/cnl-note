@@ -78,6 +78,7 @@ var simple = {
   favorite: '收藏',
   understand: '理解',
   recite: '背诵',
+  mark: '标注',
   // 提示
   no: '不',
   yes: '是',
@@ -96,7 +97,8 @@ var simple = {
   collect_book_tip: '请选择要编录的书籍',
   template_tip: '标题模板（如\'第n章\')',
   power_tip: '云想衣裳花想容···',
-  recite_tip: '请逐句默写'
+  recite_tip: '请逐句默写',
+  search_tip: '请输入搜索内容',
 }
 var traditional = {
 }

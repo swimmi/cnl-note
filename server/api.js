@@ -91,15 +91,20 @@ router.post('/piece/relate/update', (req, res) => {
   })
 })
 // 篇章书签
-router.post('/piece/bookmark/add', (req, res) => {
+router.post('/piece/mark/add', (req, res) => {
   const id = req.body.id
-  const bookmark = req.body.bookmark
-  models.Piece.updateOne({_id: id}, {$push: {'bookmarks': bookmark}}, (err, data) => {res.send(err?err:data)})
+  const mark = req.body.mark
+  models.Piece.updateOne({_id: id}, {$push: {'marks': mark}}, (err, data) => {res.send(err?err:data)})
 })
-router.post('/piece/bookmark/remove', (req, res) => {
+router.post('/piece/mark/update', (req, res) => {
   const id = req.body.id
-  const col = req.body.col
-  models.Piece.updateOne({_id: id}, {$pull: {bookmarks: {col: col}}} , (err, data) => {res.send(err?err:data)})
+  const mark = req.body.mark
+  models.Piece.updateOne({_id: id}, {$set: {'marks.$.desc': mark.desc}}, (err, data) => {res.send(err?err:data)})
+})
+router.post('/piece/mark/remove', (req, res) => {
+  const id = req.body.id
+  const mark = req.body.mark
+  models.Piece.updateOne({_id: id}, {$pull: {'marks': {'text': mark.text, 'index': mark.index}}} , (err, data) => {res.send(err?err:data)})
 })
 // 篇章浏览记录
 router.post('/piece/history/save', (req, res) => {

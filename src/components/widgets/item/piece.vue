@@ -2,7 +2,7 @@
   <Card class="piece" :padding="0" dis-hover :bordered="false">
     <div class="piece-info">
       <div class="info-left">
-        <Icon v-if="hasBookmark" type="ios-bookmark" size="20" color="#f3515188"/>
+
       </div>
       <div class="info-right">
         <span v-if="this.piece.lastViewAt"><Time :time="this.piece.lastViewAt"/> <Icon type="ios-book-outline" size="16" color="#aaa"/></span>
@@ -50,11 +50,6 @@ export default {
     return {
       menuShow: false,
       showList: true
-    }
-  },
-  computed: {
-    hasBookmark: function () {
-      return this.piece.bookmarks.length > 0
     }
   },
   methods: {

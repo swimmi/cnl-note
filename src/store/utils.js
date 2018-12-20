@@ -84,6 +84,16 @@ var textMatch = function (text1, text2) {
   return false
 }
 
+var countMatch = function (str1, str2) {
+  const regex = eval("/" + str1 + "/ig")
+  if (str2.match(regex)) {
+    return str2.match(regex).length
+  }
+  else {
+    return 0
+  }
+}
+
 var getTimeStr = function () {
   const str = '子丑寅卯辰巳午未申酉戌亥'
   const time = new Date()
@@ -104,6 +114,6 @@ var uploadPath = 'http://localhost:8080/api/'
 
 export default {
   functions: {
-    parseNumber, parseColumn, splitToSentences, getTimeStr, textMatch, uploadPath
+    parseNumber, parseColumn, splitToSentences, getTimeStr, textMatch, countMatch, uploadPath
   }
 }

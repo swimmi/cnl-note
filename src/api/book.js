@@ -12,6 +12,12 @@ export const getCatalog = async function (params) {
 export const updateCatalog = async function (params) {
   return (await api.post('/book/catalog/update', params)).data
 }
+export const addBookmark = async function (params) {
+  return (await api.post('/book/bookmark/add', params)).data
+}
+export const removeBookmark = async function (params) {
+  return (await api.post('/book/bookmark/remove', params)).data
+}
 export const saveBookHistory = async function (params) {
   return (await api.post('/book/history/save', params)).data
 }

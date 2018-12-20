@@ -64,7 +64,7 @@ export default {
           res.records.forEach((item, index) => {
             this.records.push({
               text: this.textRows[index],
-              url: item
+              name: item
             })
           })
           this.cIndex = res.records.length
@@ -112,7 +112,8 @@ export default {
           window.URL.revokeObjectURL(url)
         }
       } else {
-        this.$refs.audio.src = item.url
+        const root = this.$util.uploadPath + 'records/'
+        this.$refs.audio.src = root + item.name
       }
       this.$refs.audio.play()
       this.isPlaying = true
@@ -156,9 +157,9 @@ export default {
           const root = this.$util.uploadPath + 'records/'
           const name = `${this.id + '_' + index}.wav`
           form.append('file', item.file, name)
-          recordList.push(root + name)
+          recordList.push(name)
         } else {
-          recordList.push(item.url)
+          recordList.push(item.name)
         }
       })
       await this.$http.post('/api/upload', form, config)
