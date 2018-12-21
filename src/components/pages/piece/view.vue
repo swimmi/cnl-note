@@ -168,8 +168,8 @@
   </div>
 </template>
 <script>
-import { getPiece, getPieceRelate, addPieceMark, savePieceHistory, updatePieceStatus } from '@/api/piece'
-import { getBookContent, addBookmark, removeBookmark, saveBookHistory } from '@/api/book'
+import { getPiece, getPieceRelate, addPieceMark, updatePieceStatus } from '@/api/piece'
+import { getBookContent, addBookmark, removeBookmark } from '@/api/book'
 export default {
   name: 'view-piece',
   props: {
@@ -366,7 +366,6 @@ export default {
           })
         }
         this.showContent()
-        saveBookHistory({'id': this.id})
       })
     } else {
       getPiece({'id': this.id}).then(res => {
@@ -390,11 +389,9 @@ export default {
         this.sentences = this.$util.splitToSentences(this.srcContent)
         this.showContent()
         this.loadMarks()
-
         if (this.piece.records) {
           this.recordList = this.piece.records
         }
-        savePieceHistory({id: this.id})
       })
     }
   },

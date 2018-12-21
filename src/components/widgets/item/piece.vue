@@ -1,32 +1,41 @@
 <template>
   <Card class="piece" :padding="0" dis-hover :bordered="false">
-    <div class="piece-info">
-      <div class="info-left">
-
+    <div class="piece-container" @mouseenter="infoShow = false" @mouseleave="infoShow = true">
+      <div class="piece-header">
+        <div class="header-right">
+          <span v-if="this.piece.lastViewAt"><Time :time="this.piece.lastViewAt"/> <Icon type="ios-book-outline" size="16" color="#aaa"/></span>
+          <span v-else>{{ $str.not_yet + $str.read }}</span>
+        </div>
       </div>
-      <div class="info-right">
-        <span v-if="this.piece.lastViewAt"><Time :time="this.piece.lastViewAt"/> <Icon type="ios-book-outline" size="16" color="#aaa"/></span>
-        <span v-else>{{ $str.not_yet + $str.read }}</span>
+      <div class="piece-main">
+        <div class="piece-title" :title="piece.title">
+          <marquee v-if="piece.title.length >= 16" class="piece-title-long" scrollamount="15">{{ piece.title }}</marquee>
+          <span v-else>{{ piece.title }}</span>
+        </div>
+        <div class="piece-author"><span>{{ piece.author.name.full }}</span></div>
+        <div class="piece-brief"><span>{{ piece.content }}</span></div>
       </div>
-    </div>
-    <div class="piece-header">
-      <div class="piece-title" :title="piece.title">
-        <marquee v-if="piece.title.length >= 16" class="piece-title-long" scrollamount="15">{{ piece.title }}</marquee>
-        <span v-else>{{ piece.title }}</span>
-      </div>
-      <div class="piece-author"><span>{{ piece.author.name.full }}</span></div>
-      <div class="piece-brief"><span>{{ piece.content }}</span></div>
-    </div>
-    <div class="piece-footer">
-      <div class="menu-item"><span @click="action('view')">{{ $str.view }}</span></div>
-      <div class="menu-item"><span @click="action('modify')">{{ $str.modify }}</span></div>
-      <div class="menu-item" @mouseleave="menuShow = false">
-        <span @mouseover="menuShow = !menuShow">{{ $str.piece }}</span>
-        <transition enter-active-class="flipInY" leave-active-class="flipOutY">
-          <div v-show="menuShow" class="submenu animated">
-            <span class="submenu-item" @click="action('record')">{{ $str.record }}</span>
-            <span class="submenu-item" @click="action('edit')">{{ $str.edit }}</span>
-            <span class="submenu-item" @click="action('relate')">{{ $str.relate }}</span>
+      <div class="piece-footer">
+        <transition enter-active-class="fadeInLeft" leave-active-class="fadeOutLeft">
+          <div v-show="infoShow" class="piece-info animated">
+            <div class="menu-item"><span><Icon type="ios-glasses-outline" size="24" color="#666"/> {{ piece.number.time + ' ' + $str.time_unit }}</span></div>
+            <div class="menu-item"><span><Icon type="ios-eye-outline" size="24" color="#666"/> {{ piece.number.duration + ' ' + $str.duration_unit }}</span></div>
+          </div>
+        </transition>
+        <transition enter-active-class="fadeInRight" leave-active-class="fadeOutRight">
+          <div v-show="!infoShow" class="piece-action animated">
+            <div class="menu-item"><span @click="action('view')">{{ $str.view }}</span></div>
+            <div class="menu-item"><span @click="action('modify')">{{ $str.modify }}</span></div>
+            <div class="menu-item" @mouseleave="menuShow = false">
+              <span @mouseover="menuShow = true">{{ $str.piece }}</span>
+              <transition enter-active-class="flipInY" leave-active-class="flipOutY">
+                <div v-show="menuShow" class="submenu animated">
+                  <span class="submenu-item" @click="action('record')">{{ $str.record }}</span>
+                  <span class="submenu-item" @click="action('edit')">{{ $str.edit }}</span>
+                  <span class="submenu-item" @click="action('relate')">{{ $str.relate }}</span>
+                </div>
+              </transition>
+            </div>
           </div>
         </transition>
       </div>
@@ -49,11 +58,14 @@ export default {
   data () {
     return {
       menuShow: false,
-      showList: true
+      infoShow: true
     }
   },
   methods: {
     action (name) {
+      if (name == 'view') {
+        this.piece.number.time ++
+      }
       this.$bus.emit('actionPiece', name, this.piece._id)
     }
   }
@@ -69,28 +81,26 @@ export default {
   background: @white-bg;
   padding: 12px 12px 6px 12px;
   cursor: pointer;
+  overflow: hidden;
   .hover-fade();
   &:hover {
     background: @white-bg;
   }
-  &:hover .piece-footer {
-    opacity: 1;
-  }
-  .piece-info {
+  .piece-header {
     width: 100%;
     font-size: @subtext-size;
     color: @text-grey;
     display: flex;
-    .info-left {
+    .header-left {
       flex: 1;
       text-align: left;
     }
-    .info-right {
+    .header-right {
       flex: 1;
       text-align: right;
     }
   }
-  .piece-header {
+  .piece-main {
     width: 100%;
     position: relative;
     .piece-title {
@@ -124,9 +134,17 @@ export default {
   }
   .piece-footer {
     position: relative;
-    display: flex;
     height: @title-height;
-    opacity: 0;
+    .piece-info {
+      position: absolute;
+      width: 100%;
+      display: flex;
+    }
+    .piece-action {
+      position: absolute;
+      width: 100%;
+      display: flex;
+    }
     .menu-item {
       flex: 1;
       line-height: @title-height;

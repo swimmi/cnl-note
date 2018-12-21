@@ -1,6 +1,5 @@
 <template>
-  <Spin v-if="loading" class="center-parent"></Spin>
-  <Form v-else :model="piece" :rules="pieceValidate" :label-width="60" ref="piece" class="drawer-form">
+  <Form :model="piece" :rules="pieceValidate" :label-width="60" ref="piece" class="drawer-form">
     <FormItem :label="$str.title" prop="title">
       <Input v-model="piece.title" :placeholder="$str.input_tip"></Input>
     </FormItem>
@@ -9,7 +8,8 @@
     </FormItem>
     <FormItem :label="$str.author">
       <Select
-        v-model="piece.author._id"
+        v-model="author"
+        :placeholder="authorName"
         filterable
         remote
         label-in-value
@@ -19,8 +19,8 @@
         <Option v-for="(item, index) in authorList" :value="item.value" :key="index">{{ item.label }}</Option>
       </Select>
     </FormItem>
-    <FormItem v-if="authorUnknown" :label="$str.period">
-      <Select v-model="piece.period">
+    <FormItem v-if="authorUnknown" :label="$str.dynasty">
+      <Select v-model="piece.dynasty">
         <Option
           v-for="(item, index) in dynastyList"
           :key="index"
@@ -46,8 +46,7 @@
           type="textarea"
           :autosize="{minRows: 8, maxRows: 12}"
           :placeholder="$str.input_tip"
-          onpaste="return false;"
-          @on-change="filterText"></Input>
+          onpaste="return false;"></Input>
     </FormItem>
     <FormItem :label="$str.lock" prop="locked">
       <Switch v-model="piece.locked" size="large"/>
@@ -71,14 +70,16 @@ export default {
         title: '',
         desc: '',
         author: '',
-        period: '',
+        dynasty: 0,
         content: '',
         locked: false
       },
+      author: '',
+      authorName: this.$str.select_tip,
       pieceValidate: {
         title: [{ required: true, message: this.$str.need_input, trigger: 'blur' }],
         author: [{ required: true, message: this.$str.need_select, trigger: 'change' }],
-        period: [{ required: true, type: 'number', message: this.$str.need_select, trigger: 'change' }],
+        dynasty: [{ required: true, type: 'number', message: this.$str.need_select, trigger: 'change' }],
       },
       cannotEdit: false,
       authorUnknown: false,
@@ -87,8 +88,7 @@ export default {
       authorList: [],
       categoryList: data.category,
       dynastyList: data.dynasty,
-      errored: false,
-      loading: true
+      errored: false
     }
   },
   mounted () {
@@ -113,6 +113,8 @@ export default {
               if (this.piece.locked) {
                 this.cannotEdit = true
               }
+              this.author = this.piece.author._id
+              this.authorName = this.piece.author.name.full
             }
           })
         }, 300)
@@ -125,7 +127,6 @@ export default {
             label: item.name.full
           }
         })
-        this.loading = false
       })
     },
     queryAuthors (query) {
@@ -145,18 +146,16 @@ export default {
           this.authorUnknown = true
         } else {
           this.authorUnknown = false
-          getAuthor({'id': this.piece.author}).then(res => {
-            this.piece.period = res.dynasty
+          getAuthor({'id': this.author}).then(res => {
+            this.piece.dynasty = res.dynasty
           })
         }
       }
     },
-    filterText () {
-      this.piece.content = this.piece.content.replace(/[a-z]|[1-9]| /g, '')
-    },
     submit () {
       this.$refs['piece'].validate((valid) => {
         if (valid) {
+          this.piece.author = this.author
           if (this.id == '') {
             addPiece({piece: this.piece}).then(res => {
               this.$refs.piece.resetFields()

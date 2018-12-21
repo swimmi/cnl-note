@@ -1,7 +1,7 @@
 <template>
   <Form :model="piece" :label-width="60" ref="pieceContent" class="drawer-form">
     <FormItem :label="$str.content">
-      <Input v-model="piece.content" type="textarea" :autosize="{minRows: 25, maxRows: 30}" :placeholder="$str.input" @on-change="filterText" onpaste="return false;"></Input>
+      <Input v-model="piece.content" type="textarea" :autosize="{minRows: 25, maxRows: 30}" :placeholder="$str.input" onpaste="return false;"></Input>
     </FormItem>
     <FormItem :label="$str.lock" prop="locked">
       <Switch v-model="piece.locked" size="large"/>
@@ -34,9 +34,6 @@ export default {
     })
   },
   methods: {
-    filterText () {
-      this.piece.content = this.piece.content.replace(/[a-z]|[1-9]| /g, '')
-    },
     submit () {
       updatePieceContent({
         id: this.id,

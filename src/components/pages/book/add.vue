@@ -1,6 +1,5 @@
 <template>
-  <Spin v-if="loading" class="center-parent"></Spin>
-  <Form v-else :model="book" :rules="bookValidate" :label-width="60" ref="book" class="drawer-form">
+  <Form :model="book" :rules="bookValidate" :label-width="60" ref="book" class="drawer-form">
     <FormItem :label="$str.book_title" prop="title">
       <Input v-model="book.title" :placeholder="$str.input_tip"></Input>
     </FormItem>
@@ -86,8 +85,7 @@ export default {
       dynastyList: data.dynasty,
       loadingAuthor: false,
       allAuthors: [],
-      authorList: [],
-      loading: true
+      authorList: []
     }
   },
   mounted () {
@@ -111,7 +109,6 @@ export default {
             dynasty: item.dynasty
           }
         })
-        this.loading = false
       })
     },
     handleAdd () {

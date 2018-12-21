@@ -1,6 +1,6 @@
 <template>
   <div id="app" :style="{backgroundImage: 'url(static/images/bg/'+ theme + '.jpg)'}">
-    <router-view v-if="isRouterAlive" :piece="random.piece"/>
+    <router-view v-if="isRouterAlive" :randomId="random.piece._id"/>
     <router-view v-else name="locker" :random="random"/>
     <power-modal v-if="isPowerMode" :mode="mode" :params="params"></power-modal>
     <Icon

@@ -23,7 +23,8 @@ router.post('/piece/update', (req, res) => {
     'title': piece.title,
     'desc': piece.desc,
     'author': piece.author,
-    'period': piece.period,
+    'dynasty': piece.dynasty,
+    'category': piece.category,
     'content': piece.content,
     'locked': piece.locked
   }, (err, data) => {res.send(err?err:data)})
@@ -40,20 +41,38 @@ router.get('/piece/all', (req, res) => {
 router.post('/piece/search', (req, res) => {
   const key = req.body.keyword
   const reg = new RegExp(key)
+  const page = req.body.page || 0
+  const limit = req.body.limit || 10
   models.Piece.
     find({$or: [{'title': {$regex: reg}}, {'content': {$regex: reg}}, {'name.full': {$regex: reg}}]}).
     populate({path: 'author', select: 'name.full'}).
-    sort({'updatedAt': -1}).
+    sort({'lastViewAt': -1}).
+    skip(page * limit).
+    limit(limit).
     exec((err, data) => {res.send(err?err:data)})
 })
 router.post('/piece/author', (req, res) => {
   const author = req.body.author
-  const period = req.body.dynasty
-  models.Piece.find({'author': author, 'period': period}, (err, data) => {res.send(err?err:data)})
+  const dynasty = req.body.dynasty
+  const page = req.body.page || 0
+  const limit = req.body.limit || 10
+  models.Piece.
+    find({'author': author, 'dynasty': dynasty}).
+    sort({'lastViewAt': -1}).
+    skip(page * limit).
+    limit(limit).
+    exec((err, data) => {res.send(err?err:data)})
 })
 router.post('/piece/category', (req, res) => {
   const category = req.body.category
-  models.Piece.find({'category': category}, (err, data) => {res.send(err?err:data)})
+  const page = req.body.page || 0
+  const limit = req.body.limit || 10
+  models.Piece.
+    find({'category': category}).
+    sort({'lastViewAt': -1}).
+    skip(page * limit).
+    limit(limit).
+    exec((err, data) => {res.send(err?err:data)})
 })
 router.post('/piece/random', (req, res) => {
   var size = 1
@@ -109,7 +128,7 @@ router.post('/piece/mark/remove', (req, res) => {
 // 篇章浏览记录
 router.post('/piece/history/save', (req, res) => {
   const id = req.body.id
-  models.Piece.updateOne({_id: id}, {$set: {'lastViewAt': Date.now()}}, (err, data) => {res.send(err?err:data)})
+  models.Piece.updateOne({_id: id}, {$set: {'lastViewAt': Date.now()}, $inc: {'number.time': 1}}, (err, data) => {res.send(err?err:data)})
 })
 // 最近篇章
 router.post('/piece/recent', (req, res) => {
@@ -119,7 +138,7 @@ router.post('/piece/recent', (req, res) => {
   switch (orderBy) {
     case 'view':
       models.Piece.
-        find({'lastViewAt': { $exists: true }}).
+        find({}).
         populate({path: 'author', select: 'name.full'}).
         sort({'lastViewAt': -1}).
         skip(page * limit).
@@ -150,6 +169,13 @@ router.post('/piece/status/update', (req, res) => {
   const value = req.body.value
   const typeStr = 'status.' + ['understand', 'recite', 'favorite'][type]
   models.Piece.updateOne({_id: id}, {$set: {[typeStr]: value}}, (err, data) => {res.send(err?err:data)})
+})
+// 更新篇章相关数量
+router.post('/piece/number/update', (req, res) => {
+  const id = req.body.id
+  const count = req.body.count || 1
+  const type = 'number.' + req.body.type
+  models.Piece.updateOne({_id: id}, {$inc: {[type]: count}}, (err, data) => {res.send(err?err:data)})
 })
 
 /**
@@ -250,7 +276,13 @@ router.post('/book/recent', (req, res) => {
 })
 router.post('/book/history/save', (req, res) => {
   const id = req.body.id
-  models.Book.updateOne({_id: id}, {$set: {'lastViewAt': Date.now()}}, (err, data) => {res.send(err?err:data)})
+  models.Book.updateOne({_id: id}, {$set: {'lastViewAt': Date.now()}, $inc: {'number.time': 1}}, (err, data) => {res.send(err?err:data)})
+})
+router.post('/book/number/update', (req, res) => {
+  const id = req.body.id
+  const count = req.body.count || 1
+  const type = 'number.' + req.body.type
+  models.Book.updateOne({_id: id}, {$inc: {[type]: count}}, (err, data) => {res.send(err?err:data)})
 })
 
 /**
@@ -258,21 +290,35 @@ router.post('/book/history/save', (req, res) => {
  */
 // Util
 router.get('/util/dashboard', async (req, res) => {
-  var counts = [0, 0, 0]
-  await models.Piece.find({}, {content: 1}, (err, data) => {
-    if(!err) { 
-      counts[2] = data.reduce(function (total, item) {
-        return total + item.content.length
-      }, 0)
-      models.Author.countDocuments((err, data) => {
-        if(!err) { counts[0] = data }
-      })
-      models.Piece.countDocuments((err, data) => {
-        if(!err) { counts[1] = data }
+  var counts = []
+  models.Author.countDocuments({}, (err, data) => {
+    if(!err) {
+      counts.push(data)
+      models.Piece.countDocuments({}, (err, data) => {
+        if(!err) {
+          counts.push(data)
+          models.Book.countDocuments({}, (err, data) => {
+            if(!err) {
+              counts.push(data)
+              models.Piece.find({}, {'content': 1, 'number.duration': 1}, (err, data) => {
+                if(!err) { 
+                  var d = data.reduce(function (total, item) {
+                    return total + item.content.length
+                  }, 0)
+                  counts.push(d)
+                  d = data.reduce(function (total, item) {
+                    return total + item.number.duration
+                  }, 0)
+                  counts.push(d)
+                  res.send(counts)
+                }
+              })
+            }
+          })
+        }
       })
     }
   })
-  res.send(counts)
 })
 router.post('/util/pairtext', function(req, res) {
   var text = req.body.text
@@ -288,6 +334,28 @@ router.post('/util/pairtext', function(req, res) {
         res.send(err?err:'')
       }
     })
+})
+router.post('/util/item/count', function(req, res) {
+  var counts = [0, 0]
+  const params = req.body.params || null
+  if (params) {
+    delete params.page
+    delete params.limit
+    if ('orderBy' in params) {
+      delete params.orderBy
+    }
+  }
+  models.Piece.countDocuments(params, (err, data) => {
+    if(!err) {
+      counts[0] = data
+      models.Book.countDocuments(params, (err, data) => {
+        if(!err) {
+          counts[1] = data
+          res.send(counts)
+        }
+      })
+    }
+  })
 })
 
 router.get('/:dir/:name', function(req, res) {

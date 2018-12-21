@@ -1,6 +1,5 @@
 <template>
-  <Spin v-if="loading" class="center-parent" />
-  <Form v-else ref="book" class="drawer-form">
+  <Form ref="book" class="drawer-form">
     <FormItem>
       <Collapse accordion value="0">
         <Panel class="panel" name="0">
@@ -154,7 +153,6 @@ export default {
       showDrawer: false,
       templateString: '',
       templateCount: 0,
-      loading: true,
       drawerStyles: {
         background: 'url(static/images/drawer_bg.jpg)',
         backgroundPosition: '50%',
@@ -176,7 +174,6 @@ export default {
             label: item.title
           }
         })
-        this.loading = false
       })
     },
     queryBooks (query) {
@@ -236,7 +233,6 @@ export default {
             label: item.title
           }
         })
-        this.loading = false
       })
       this.pieces = item.pieces
       this.orderPieces = item.pieces.slice()

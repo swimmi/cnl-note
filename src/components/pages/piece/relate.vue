@@ -34,7 +34,7 @@ export default {
         content: '',
       },
       typeNames: ['注解', '翻译', '评论', '赏析'],
-      typeContents: ['', '', '', '']
+      typeContents: ['', '', '', ''],
     }
   },
   mounted () {
@@ -50,7 +50,6 @@ export default {
         this.selectType(this.relate.type)
       }
     })
-    this.loading = false
   },
   methods: {
     selectType (val) {

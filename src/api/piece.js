@@ -37,6 +37,9 @@ export const uploadPieceRecords = async function (params) {
 export const updatePieceStatus = async function (params) {
   return (await api.post('/piece/status/update', params)).data
 }
+export const updatePieceNumber = async function (params) {
+  return (await api.post('/piece/number/update', params)).data
+}
 // 查询类
 export const getPiece = async function (params) {
   return (await api.post('/piece/get', params)).data

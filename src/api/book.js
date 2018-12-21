@@ -21,6 +21,9 @@ export const removeBookmark = async function (params) {
 export const saveBookHistory = async function (params) {
   return (await api.post('/book/history/save', params)).data
 }
+export const updateBookNumber = async function (params) {
+  return (await api.post('/book/number/update', params)).data
+}
 // 查询类
 export const getBook = async function (params) {
   return (await api.post('/book/get', params)).data

@@ -3,8 +3,8 @@
     <div class="list-header">
       <div class="list-title" @click="scrollToTop"><span>{{ data.title }}</span></div>
       <div class="list-tabs">
-        <span class="title-piece" :class="{'title-on': item == 0}" @click="item = 0">{{ $str.piece }}</span>
-        <span class="title-book" :class="{'title-on': item == 1}" @click="item = 1">{{ $str.book }}</span>
+        <span class="title-piece" :class="{'title-on': item == 0}" @click="item = 0">{{ $str.piece + counts[0] }}</span>
+        <span class="title-book" :class="{'title-on': item == 1}" @click="item = 1">{{ $str.book + counts[1] }}</span>
         <span class="list-tabs-indicator" :class="selectedTab"></span>
       </div>
     </div>
@@ -31,6 +31,7 @@ import PieceItem from '@/components/widgets/item/piece'
 import BookItem from '@/components/widgets/item/book'
 import { getRecentPieces, getAuthorPieces, getCategoryPieces } from '@/api/piece'
 import { getRecentBooks, getAuthorBooks, getCategoryBooks } from '@/api/book'
+import { getItemCount } from '@/api/common'
 export default {
   name: 'list-view',
   components: {
@@ -48,6 +49,7 @@ export default {
       item: 0,          // 0: piece, 1: book
       pieces: [],
       books: [],
+      counts: [0, 0],       // 数量
       pages: [0, 0],
       limit: 10,
       scrollHeight: 0,
@@ -75,6 +77,9 @@ export default {
           } else {
             this.books.push(item)
           }
+        })
+        getItemCount({'params': params}).then(res => {
+          this.counts = res
         })
       })
     },

@@ -13,10 +13,10 @@
             <Submenu name="recent">
                 <template slot="title">{{ $str.recent }}</template>
                 <MenuItem name="recent_read"><span>{{ $str.read }}</span></MenuItem>
-                <MenuItem name="recent_add"><span>{{ $str.add }}</span></MenuItem>
+                <MenuItem name="recent_collect"><span>{{ $str.collect }}</span></MenuItem>
             </Submenu>
-            <Submenu name="add">
-                <template slot="title">{{ $str.add_all }}</template>
+            <Submenu name="new">
+                <template slot="title">{{ $str.new }}</template>
                 <MenuItem name="add_author_drawer"><span>{{ $str.add_author }}</span></MenuItem>
                 <MenuItem name="add_piece_drawer"><span>{{ $str.add_piece }}</span></MenuItem>
                 <MenuItem name="add_book_drawer"><span>{{ $str.add_book }}</span></MenuItem>
@@ -42,13 +42,14 @@
         <piece-view v-else :id="readBookId == ''?viewPieceId:readBookId" :isBook="readBookId != ''" class="content-piece animated slideInRight"></piece-view>
       </div>
     </Content>
-    <Drawer ref="drawer" placement="left" :closable="false" :maskClosable="false" v-model="showDrawer" :width="drawerWidth" @on-close="back" class="drawer" :styles="drawerStyles">
+    <Drawer ref="drawer" placement="left" :closable="false" :maskClosable="false" v-model="drawerShow" :width="drawerWidth" @on-close="back" class="drawer" :styles="drawerStyles">
       <div class="drawer-header">
         <div class="drawer-back" type="primary" @click="back"><Icon type="md-close" size="24" /></div>
         <span class="drawer-title">{{ drawerTitle }}</span>
         <div class="drawer-submit" type="primary" @click="submit"><Icon type="md-checkmark" size="24" /></div>
       </div>
-      <div class="drawer-content">
+      <Spin v-if="loadDrawer" fix/>
+      <div v-else class="drawer-content">
         <author-add v-if="actionName === 'add_author_drawer'" :ref="actionName"></author-add>
         <book-add v-else-if="['add_book_drawer', 'modify_book_drawer'].indexOf(actionName) != -1" :ref="actionName" :id="actionName === 'modify_book_drawer' ? bookToDo : ''"></book-add>
         <book-collect v-else-if="actionName === 'collect_book_drawer'" :ref="actionName"></book-collect>
@@ -75,8 +76,8 @@ import IndexCategory from '@/components/pages/category'
 import ListView from '@/components/widgets/listview'
 import DashBoard from '@/components/widgets/dashboard'
 // api方法
-import { getPiece, getPieceRecent, getPieceRandom } from '@/api/piece'
-import { getBook, getCategoryBooks, getAuthorBooks } from '@/api/book'
+import { getPiece, getPieceRecent, getPieceRandom, savePieceHistory, updatePieceNumber } from '@/api/piece'
+import { getBook, getCategoryBooks, getAuthorBooks, saveBookHistory, updateBookNumber } from '@/api/book'
 export default {
   components: {
     BookAdd,                // 添加书籍
@@ -93,8 +94,8 @@ export default {
   },
   inject: ['reload'],
   props: {
-    piece: {
-      type: Object,
+    randomId: {
+      type: String,
       required: true
     }
   },
@@ -104,7 +105,7 @@ export default {
       subtitle: '国学笔记',  // 副标题
       actionName: 'index',  // 触发drawer操作名称
       listData: null,       // item列表
-      showDrawer: false,    // 是否显示drawer
+      drawerShow: false,    // 是否显示drawer
       showMenu: true,       // 是否显示菜单栏
       showIndex: true,      // 是否显示分类索引
       showCategory: false,  // 是否显示右侧目录索引
@@ -113,8 +114,8 @@ export default {
       bookList: [],         // 当前展示的书籍列表
       selectedBook: null,   // 当前选中的书籍
       selectedCategory: '', // 当前选中的索引目录
-      viewPieceId: this.piece._id,// 当前观看的篇章
-      readBookId: '',        // 当前阅读的书籍id
+      viewPieceId: '',      // 当前观看的篇章
+      readBookId: '',       // 当前阅读的书籍id
       drawerTitle: '',      // drawer标题
       bookSeries: [],       // 书籍卷册
       pieceToDo: '',        // 待操作的篇章
@@ -126,7 +127,8 @@ export default {
         backgroundPosition: '50%',
         backgroundSize: 'cover',
         animation: 'bgFloatH 60s ease-in-out infinite'
-      }
+      },
+      loadDrawer: true
     }
   },
   mounted () {
@@ -153,18 +155,18 @@ export default {
       this.$bus.on('randomPiece', this.randomPiece)
       this.$bus.on('actionPiece', this.actionPiece)
       this.$bus.on('addPieceRelate', this.addPieceRelate)
+      this.showPiece(this.randomId)
       this.loadPieceRecent('view')
       this.initCategory()
-      this.loadingContent = false
       document.onkeyup = (event) => {
         let e = event || window.event || arguments.callee.caller.arguments[0]
-        if (e && e.keyCode == 32 && event.target.tagName == 'BODY' && !this.showDrawer) {
+        if (e && e.keyCode == 32 && event.target.tagName == 'BODY' && !this.drawerShow) {
           this.changeMode()
         }
       }
     },
     loadPieceRecent (val) {
-      const title = this.$str.recent + (val == 'view' ? this.$str.read : this.$str.add)
+      const title = this.$str.recent + (val == 'view' ? this.$str.read : this.$str.collect)
       const params = {
         orderBy: val
       }
@@ -195,16 +197,20 @@ export default {
         'record': this.$str.record
       }
       if (name.indexOf('drawer') > -1) {
+        this.loadDrawer = true
         const names = name.split('_')
         this.drawerTitle = dic[names[0]] + dic[names[1]]
         this.actionName = name
-        this.showDrawer = true
+        this.drawerShow = true
+        setTimeout(() => {
+          this.loadDrawer = false
+        }, 500)
       } else {
         switch (name) {
           case 'recent_read':
             this.loadPieceRecent('view')
             break
-          case 'recent_add':
+          case 'recent_collect':
             this.loadPieceRecent('create')
             break
           case 'search':
@@ -283,6 +289,10 @@ export default {
       setTimeout(() => {
         this.viewPieceId = id
         this.loadingContent = false
+        savePieceHistory({'id': id})
+        setInterval(() => {
+          updatePieceNumber({'id': id, 'type': 'duration'})
+        }, 60000);
       }, 300)
     },
     // 对篇章进行各项操作
@@ -300,16 +310,23 @@ export default {
           break
       }
     },
+    showBook (id) {
+      this.loadingContent = true
+      setTimeout(() => {
+        this.readBookId = id
+        this.loadingContent = false
+        saveBookHistory({'id': id})
+        setInterval(() => {
+          updateBookNumber({'id': id, 'type': 'duration'})
+        }, 60000);
+      }, 300)
+    },
     // 对书籍进行各项操作
     actionBook (name, id) {
       this.bookToDo = id
       switch (name) {
         case 'read':
-          this.loadingContent = true
-          setTimeout(() => {
-            this.readBookId = id
-            this.loadingContent = false
-          }, 300)
+          this.showBook(id)
           break
         case 'modify':
           this.action(name + '_book_drawer')
@@ -355,7 +372,7 @@ export default {
     },
     back () {
       this.actionName = ''
-      this.showDrawer = false
+      this.drawerShow = false
     }
   }
 }
@@ -428,8 +445,7 @@ export default {
 }
 .dashboard {
   .center-horizontal();
-  width: 150px;
-  bottom: 0px;
+  bottom: 24px;
 }
 .ivu-menu-item-active:not(.ivu-menu-submenu) {
   background: none!important;

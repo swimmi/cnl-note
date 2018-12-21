@@ -8,10 +8,10 @@ const pieceSchema = Schema({
   title: String,                              // 标题
   desc: String,                               // 题记
   author: { type: ObjectId, ref: 'Author' },  // 作者
-  period: Number,                             // 时期，作者佚名时
+  dynasty: Number,                            // 作者佚名时可作区分
   category: Number,                           // 分类
   content: String,                            // 内容
-  locked: { type: Boolean, default: false },   // 是否锁定
+  locked: { type: Boolean, default: false },  // 是否锁定
   relates: [],                                // 相关内容
   records: [],                                // 朗读音频文件
   marks: [                                    // 批注
@@ -20,7 +20,11 @@ const pieceSchema = Schema({
       index: { type: Number },
       desc: { type: String }
     }
-  ],                                  
+  ],
+  number: {
+    time: { type: Number, default: 0 },       // 阅读次数
+    duration: { type: Number, default: 0 }    // 阅读时长，分钟
+  },
   status: {
     understand: { type: Boolean, default: false },    // 已理解
     recite: { type: Boolean, default: false },        // 可背诵
@@ -87,6 +91,10 @@ const bookSchema = Schema({
       pieces: [{ type: ObjectId, ref: 'Piece' }]
     }
   ],
+  number: {
+    time: { type: Number, default: 0 },       // 阅读次数
+    duration: { type: Number, default: 0 }    // 阅读时长，分钟
+  },
   hidden: { type: Boolean, default: false },
   lastViewAt: Date
 }, {collection: 'books', timestamps: true})

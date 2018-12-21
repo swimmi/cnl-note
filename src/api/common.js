@@ -9,3 +9,6 @@ export const saveHistory = async function (params) {
 export const pairText = async function (params) {
   return (await api.post('/util/pairtext', params)).data
 }
+export const getItemCount = async function (params) {
+  return (await api.post('/util/item/count', params)).data
+}

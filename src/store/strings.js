@@ -13,7 +13,6 @@ var simple = {
   index: '索引',
   title: '标题',
   dynasty: '朝代',
-  period: '时期',
   native_place: '籍贯',
   birth_death: '生卒',
   title_desc: '题序',
@@ -42,6 +41,9 @@ var simple = {
   catalog: '目录',
   book_piece: '书篇',
   random: '随机',
+  time_unit: '次',
+  duration_unit: '分钟',
+
   // 动词
   add: '添加',
   back: '返回',
@@ -61,7 +63,7 @@ var simple = {
   lock: '锁定',
   unlock: '解锁',
   change: '更换',
-  add_all: '著作',
+  new: '新增',
   add_author: '集贤',
   add_piece: '纳篇',
   add_book: '收书',
@@ -79,6 +81,7 @@ var simple = {
   understand: '理解',
   recite: '背诵',
   mark: '标注',
+
   // 提示
   no: '不',
   yes: '是',
