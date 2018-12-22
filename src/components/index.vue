@@ -1,46 +1,44 @@
 <template>
 <div class="layout">
-  <div v-if="isReadMode" class="layout-read-mode animated zoomInUp">
-    <Spin v-if="loadingContent"></Spin>
-    <piece-view v-else class="animated fadeInLeft" :id="readBookId == ''?viewPieceId:readBookId" :isBook="readBookId != ''" :readMode="true"></piece-view>
-  </div>
-  <Layout v-else class="layout-main-mode animated fadeInLeft">
-    <Sider class="sider" width="240">
-      <div class="sider-title"><span>{{ $util.getTimeStr() }}</span></div>
-      <Tabs class="sider-tabs" >
-        <TabPane :label="$str.menu" name="menu">
-          <Menu width="auto" active-name="recent_read" :open-names="['recent']" accordion class="menu" @on-select="action">
-            <Submenu name="recent">
-                <template slot="title">{{ $str.recent }}</template>
-                <MenuItem name="recent_read"><span>{{ $str.read }}</span></MenuItem>
-                <MenuItem name="recent_collect"><span>{{ $str.collect }}</span></MenuItem>
-            </Submenu>
-            <Submenu name="new">
-                <template slot="title">{{ $str.new }}</template>
-                <MenuItem name="add_author_drawer"><span>{{ $str.add_author }}</span></MenuItem>
-                <MenuItem name="add_piece_drawer"><span>{{ $str.add_piece }}</span></MenuItem>
-                <MenuItem name="add_book_drawer"><span>{{ $str.add_book }}</span></MenuItem>
-                <MenuItem name="collect_book_drawer"><span>{{ $str.collect_book }}</span></MenuItem>
-            </Submenu>
-            <MenuItem name="search"><span>{{ $str.search }}</span></MenuItem>
-          </Menu>
-          <dash-board class="dashboard"></dash-board>
-        </TabPane>
-        <TabPane :label="$str.index" name="index">
-          <index-category @selectCategory="showCategoryItems" @selectAuthor="showAuthorItems"></index-category>
-        </TabPane>
-        <TabPane class="tab-pane" :label="$str.favorite" name="favorite">
-        </TabPane>
-      </Tabs>
-    </Sider>
+  <Layout class="layout-main">
+    <div class="siders animated" v-show="siderShow" :class="{'slideInLeft': siderShow, 'slideOutLeft': !siderShow}">
+      <Sider class="sider-left" width="240">
+        <div class="sider-title"><span>{{ $util.getTimeStr() }}</span></div>
+        <Tabs class="sider-tabs">
+          <TabPane :label="$str.menu" name="menu">
+            <Menu width="auto" active-name="recent_read" :open-names="['recent']" accordion class="menu" @on-select="action">
+              <Submenu name="recent">
+                  <template slot="title">{{ $str.recent }}</template>
+                  <MenuItem name="recent_read"><span>{{ $str.read }}</span></MenuItem>
+                  <MenuItem name="recent_collect"><span>{{ $str.collect }}</span></MenuItem>
+              </Submenu>
+              <Submenu name="new">
+                  <template slot="title">{{ $str.new }}</template>
+                  <MenuItem name="add_author_drawer"><span>{{ $str.add_author }}</span></MenuItem>
+                  <MenuItem name="add_piece_drawer"><span>{{ $str.add_piece }}</span></MenuItem>
+                  <MenuItem name="add_book_drawer"><span>{{ $str.add_book }}</span></MenuItem>
+                  <MenuItem name="collect_book_drawer"><span>{{ $str.collect_book }}</span></MenuItem>
+              </Submenu>
+              <MenuItem name="search"><span>{{ $str.search }}</span></MenuItem>
+            </Menu>
+            <dash-board class="dashboard"></dash-board>
+          </TabPane>
+          <TabPane :label="$str.index" name="index">
+            <index-category @selectCategory="showCategoryItems" @selectAuthor="showAuthorItems"></index-category>
+          </TabPane>
+          <TabPane class="tab-pane" :label="$str.favorite" name="favorite">
+          </TabPane>
+        </Tabs>
+      </Sider>
+      <Sider class="sider-right" width="360">
+        <list-view v-if="listData != null" :data="listData"></list-view>
+      </sider>
+      <Sider class="sider-right" width="400">
+      </sider>
+    </div>
     <Content class="content">
-      <div class="content-left">
-        <list-view class="animated slideInLeft" v-if="listData != null" :data="listData"></list-view>
-      </div>
-      <div class="content-right">
-        <Spin v-if="loadingContent"></Spin>
-        <piece-view v-else :id="readBookId == ''?viewPieceId:readBookId" :isBook="readBookId != ''" class="content-piece animated slideInRight"></piece-view>
-      </div>
+      <Spin v-if="loadingContent" fix></Spin>
+      <piece-view v-else :id="readBookId == ''?viewPieceId:readBookId" :isBook="readBookId != ''" :readMode="!siderShow" class="animated slideInRight"></piece-view>
     </Content>
     <Drawer ref="drawer" placement="left" :closable="false" :maskClosable="false" v-model="drawerShow" :width="drawerWidth" @on-close="back" class="drawer" :styles="drawerStyles">
       <div class="drawer-header">
@@ -106,6 +104,7 @@ export default {
       actionName: 'index',  // 触发drawer操作名称
       listData: null,       // item列表
       drawerShow: false,    // 是否显示drawer
+      siderShow: false,     // 是否显示侧边栏
       showMenu: true,       // 是否显示菜单栏
       showIndex: true,      // 是否显示分类索引
       showCategory: false,  // 是否显示右侧目录索引
@@ -120,7 +119,6 @@ export default {
       bookSeries: [],       // 书籍卷册
       pieceToDo: '',        // 待操作的篇章
       relateType: 0,        // 相关内容类型
-      isReadMode: true,     // 阅读模式
       drawerStyles: {
         padding: '0px',
         background: 'url(static/images/drawer_bg.jpg)',
@@ -150,10 +148,10 @@ export default {
       this.$bus.on('reload', this.reload)
       this.$bus.on('refresh', this.refresh)
       this.$bus.on('showList', this.showList)
-      this.$bus.on('changeMode', this.changeMode)
       this.$bus.on('actionBook', this.actionBook)
       this.$bus.on('randomPiece', this.randomPiece)
       this.$bus.on('actionPiece', this.actionPiece)
+      this.$bus.on('setReadMode', this.setReadMode)
       this.$bus.on('addPieceRelate', this.addPieceRelate)
       this.showPiece(this.randomId)
       this.loadPieceRecent('view')
@@ -161,7 +159,7 @@ export default {
       document.onkeyup = (event) => {
         let e = event || window.event || arguments.callee.caller.arguments[0]
         if (e && e.keyCode == 32 && event.target.tagName == 'BODY' && !this.drawerShow) {
-          this.changeMode()
+          this.siderShow = !this.siderShow
         }
       }
     },
@@ -293,7 +291,7 @@ export default {
         setInterval(() => {
           updatePieceNumber({'id': id, 'type': 'duration'})
         }, 60000);
-      }, 300)
+      }, 1000)
     },
     // 对篇章进行各项操作
     actionPiece (name, id) {
@@ -319,7 +317,7 @@ export default {
         setInterval(() => {
           updateBookNumber({'id': id, 'type': 'duration'})
         }, 60000);
-      }, 300)
+      }, 500)
     },
     // 对书籍进行各项操作
     actionBook (name, id) {
@@ -334,9 +332,6 @@ export default {
       }
     },
     addPieceRelate (type, id) {
-      if (this.isReadMode) {
-        this.isReadMode = false
-      }
       this.relateType = type
       setTimeout(() => {
         this.actionPiece('relate', id)
@@ -360,8 +355,8 @@ export default {
     submit () {
       this.$refs[this.actionName].submit()
     },
-    changeMode () {
-      this.isReadMode = !this.isReadMode
+    setReadMode (flag) {
+      this.siderShow = !flag
     },
     randomPiece () {
       getPieceRandom().then(res => {
@@ -378,59 +373,43 @@ export default {
 }
 </script>
 <style lang="less" scoped>
-.menu {
-  margin: 0 auto;
-  height: calc(100vh - 100px - 48px);
-  background: transparent;
-  &:after {
-    width: 0px;
-  }
-  .sub-menu {
-    margin-left: 24px;
-  }
-}
-.sider {
-  background: @white-bg;
-  .sider-title {
-    text-align: center;
-    height: @list-header-height;
-    line-height: @list-header-height;
-    font-size: @title-size;
-    font-weight: bold;
-    color: @iview-color;
-  }
-}
-.layout {
-  width: 100%;
-  height: 100vh;
-}
-.layout-main-mode {
+.layout-main {
   width: 100%;
   background: transparent;
-  .content {
+  .siders {
+    flex: 1;
     display: flex;
-    .content-left {
-      display: inline-block;
-      width: 360px;
-      height: 100vh;
-      z-index: 3;
+  }
+  .sider-left {
+    background: @white-bg;
+    .sider-title {
+      text-align: center;
+      height: @list-header-height;
+      line-height: @list-header-height;
+      font-size: @title-size;
+      font-weight: bold;
+      color: @iview-color;
     }
-    .content-right {
-      width: calc(100% - 360px);
-      height: 100vh;
-      .flex-center();
-    }
-    .sider-switch {
-      position: absolute;
-      bottom: 12px;
-      right: 12px;
+    .menu {
+      margin: 0 auto;
+      height: calc(100vh - 100px - 48px);
+      background: transparent;
+      &:after {
+        width: 0px;
+      }
+      .sub-menu {
+        margin-left: 24px;
+      }
     }
   }
-}
-.layout-read-mode {
-  .flex-center();
-  height: 100vh;
-  background: transparent;
+  .sider-right {
+    background: transparent;
+  }
+  .content {
+    flex: 1;
+    height: 100vh;
+    .flex-center();
+  }
 }
 .book {
   width: 160px;

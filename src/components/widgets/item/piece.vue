@@ -9,7 +9,7 @@
       </div>
       <div class="piece-main">
         <div class="piece-title" :title="piece.title">
-          <marquee v-if="piece.title.length >= 16" class="piece-title-long" scrollamount="15">{{ piece.title }}</marquee>
+          <marquee v-if="piece.title.length >= 16" scrollamount="15">{{ piece.title }}</marquee>
           <span v-else>{{ piece.title }}</span>
         </div>
         <div class="piece-author"><span>{{ piece.author.name.full }}</span></div>

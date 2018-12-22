@@ -43,7 +43,8 @@ export default {
       isRouterAlive: false,
       isPowerMode: false,
       audioIndex: -1,        // 当前播放的音频索引
-      audioList: [],
+      audioList: [],         // 当前播放的音频列表
+      audioId: '',           // 当前播放的篇章id
       isPlayingAudio: false,
       maxSize: 16,
       mode: 0,                     // Power模式的子模式
@@ -92,7 +93,7 @@ export default {
     },
     playAudio () {
       if (this.$refs.audio) {
-        const root = this.$util.uploadPath + 'records/'
+        const root = `${this.$util.uploadPath}records/${this.audioId}/`
         this.$refs.audio.src = root + this.audioList[this.audioIndex]
         this.$refs.audio.play()
         this.isPlayingAudio = true
@@ -129,15 +130,17 @@ export default {
         }
         this.playAudio()
       } else {
+        this.$Message.warning(this.$str.records_play_over_tip)
         setTimeout(() => {
-          this.$bus.emit('playNextRecord')
+          this.$bus.emit('resetRecord')
         }, 500)
         this.audioIndex = -1
         this.$refs.audio.removeEventListener('ended', this.playAudioList)
       }
     },
-    setAudioList (list) {
+    setAudioList (list, id) {
       this.audioList = list
+      this.audioId = id
       this.playAudioList()
     },
   }
@@ -152,14 +155,15 @@ export default {
   background-repeat: no-repeat;
   background-size: auto 200vh;
   background-position: 0px 0%;
-  animation: bgFloat 180s ease-in-out infinite;
+  //animation: bgFloat 180s ease-in-out infinite;
   .change-btn {
     position: absolute;
     top: 8px;
     right: 8px;
-    padding: 4px;
+    padding: 8px;
     cursor: pointer;
     color: @primary-color;
+    border-radius: 50%;
     animation: rotateZ 1s linear infinite;
     .hover-fade();
     &:hover {
@@ -184,6 +188,7 @@ export default {
     cursor: pointer;
     animation: rotatePower 60s linear infinite;
     transition: all 1s;
+    z-index: 99;
     &:hover {
       background: darken(@primary-color, 10%);
     }

@@ -42,7 +42,7 @@ export default {
         this.$bus.emit('refresh', this.id)
         this.$bus.emit('back')
       })
-      this.$Message.success(this.$str.submit_success);
+      this.$Message.success(this.$str.submit + this.$str.success);
     }
   }
 }

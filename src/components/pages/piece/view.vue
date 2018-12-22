@@ -1,58 +1,51 @@
 <template>
-  <Spin v-if="loading" />
+  <div v-if="loading" />
   <div v-else class="piece-page" ref="page">
-    <div class="piece-space">
-      <div class="piece-action piece-action-left">
+    <div class="piece-title-container">
+      <span class="v-title piece-title">
+        <marquee class="piece-title-long" v-if="title.length >= 12" scrollamount="15" direction="up">{{ title }}</marquee>
+        <span v-else>{{ title }}</span>
+      </span>
+      <span class="v-title piece-author">{{ author }}</span>
+      <div v-if="contentIndex == 0" class="piece-action piece-action-right">
         <Icon
           class="icon-btn piece-action-btn"
-          :type="readMode?'ios-paper':'ios-book'"
-          size="24"
-          color="#888"
-          :title="(readMode?$str.browse:$str.read) + $str.mode"
-          @click="expandPage"/>
+          type="ios-color-wand"
+          size="20"
+          :color="markable? 'red' : '#888'"
+          :title="$str.mark + $str.piece"
+          @click="startMark"/>
         <Icon
           class="icon-btn piece-action-btn"
           type="ios-mic"
-          size="24"
+          size="20"
           :color="showRecordPlayer? 'red' : '#888'"
           :title="(showRecordPlayer? $str.stop : $str.start) + $str.record"
           v-show="!isBook && recordList.length > 0"
           @click="startRecord"/>
-        <transition enter-active-class="fadeIn" leave-active-class="fadeOut">
+        <transition enter-active-class="fadeIn" leave-active-class="fadeOut" mode="out-in">
           <Icon
             class="icon-btn piece-action-btn animated"
             :type="isPlaying ? 'ios-pause' : 'ios-play'"
-            size="24"
+            size="20"
             color="red"
             :title="(isPlaying ? $str.pause : $str.resume) + $str.record"
             v-show="showRecordPlayer"
             @click="playRecord"/>
         </transition>
-        <Icon
-          class="icon-btn piece-action-btn"
-          type="ios-paper-plane"
-          size="24"
-          color="#888"
-          :title="$str.random + $str.piece"
-          @click="randomView"/>
       </div>
-      <div class="page-control">
-        <Icon
-          class="icon-btn"
-          :class="{'icon-btn-disabled': pageIndex == 0}"
-          type="ios-arrow-up"
-          size="24"
-          @click="pageIndex > 0 ? pageIndex-- : ''" />
-        <span class="label-text page-number current-number" @click="showPages = !showPages">第{{ $util.parseNumber(pageIndex + 1) }}页</span>
-        <Icon
-          class="icon-btn"
-          :class="{'icon-btn-disabled': pageIndex == pages.length - 1}"
-          type="ios-arrow-down"
-          size="24"
-          @click="pageIndex < pages.length - 1 ? pageIndex++ : ''" />
+      <div class="piece-content-title">
+        <span
+          v-for="(item, index) in contents"
+          :key="index"
+          class="v-title content-title"
+          :class="{'selected': contentIndex === index}"
+          @click="changeContent(index)">
+          {{ [$str.char[0], $str.annotate[0], $str.translate[1], $str.comment[0], $str.appreciate[0]][index] }}
+        </span>
       </div>
     </div>
-    <div class="piece-content" :class="{'animated fadeIn': showPiece}">
+    <div class="piece-content animated" :class="{'fadeIn': showPiece}">
       <Slider show-stops v-show="pages.length > 1 && showPages" class="piece-page-control" :max="pages.length - 1" v-model="pageIndex"></Slider>
       <div class="page animated fadeIn" v-show="pageIndex == pi" v-for="(page, pi) in pages" :key="pi">
         <div
@@ -104,8 +97,7 @@
           </span>
         </div>
       </div>
-      <div
-        class="piece-stamp-container"
+      <div class="piece-stamp-container"
         v-show="pageIndex == pages.length - 1">
         <div
           class="piece-stamp piece-author-stamp animated pulse"
@@ -139,30 +131,37 @@
         </div>
       </div>
     </div>
-    <div class="piece-title-container">
-      <span class="v-title piece-title">
-        <marquee class="piece-title-long" v-if="title.length >= 16" scrollamount="15" direction="up">{{ title }}</marquee>
-        <span v-else>{{ title }}</span>
-      </span>
-      <span class="v-title piece-author">{{ author }}</span>
-      <div v-if="contentIndex == 0" class="piece-action piece-action-right">
+    <div class="piece-space">
+      <div class="piece-action piece-action-left">
         <Icon
           class="icon-btn piece-action-btn"
-          type="ios-color-wand"
-          size="24"
-          :color="markable? 'red' : '#888'"
-          :title="$str.mark + $str.piece"
-          @click="markable = !markable"/>
+          :type="isReadMode?'ios-paper':'ios-book'"
+          size="20"
+          color="#888"
+          :title="(isReadMode?$str.browse:$str.read) + $str.mode"
+          @click="changeMode"/>
+        <Icon
+          class="icon-btn piece-action-btn"
+          type="ios-paper-plane"
+          size="20"
+          color="#888"
+          :title="$str.random + $str.piece"
+          @click="randomView"/>
       </div>
-      <div class="piece-content-title" v-show="readMode">
-        <span
-          v-for="(item, index) in contents"
-          :key="index"
-          class="v-title content-title"
-          :class="{'selected': contentIndex === index}"
-          @click="changeContent(index)">
-          {{ [$str.char[0], $str.annotate[0], $str.translate[1], $str.comment[0], $str.appreciate[0]][index] }}
-        </span>
+      <div class="page-control">
+        <Icon
+          class="icon-btn"
+          :class="{'icon-btn-disabled': pageIndex == 0}"
+          type="ios-arrow-up"
+          size="20"
+          @click="pageIndex > 0 ? pageIndex-- : ''" />
+        <span class="label-text page-number current-number" @click="showPages = !showPages">第{{ $util.parseNumber(pageIndex + 1) }}页</span>
+        <Icon
+          class="icon-btn"
+          :class="{'icon-btn-disabled': pageIndex == pages.length - 1}"
+          type="ios-arrow-down"
+          size="20"
+          @click="pageIndex < pages.length - 1 ? pageIndex++ : ''" />
       </div>
     </div>
   </div>
@@ -183,7 +182,7 @@ export default {
     },
     readMode: {
       type: Boolean,
-      required: false
+      required: true
     }
   },
   data () {
@@ -207,6 +206,7 @@ export default {
       cw: 0,                // 窗口宽度
       ch: 0,                // 窗口高度
       showPiece: false,
+      isReadMode: this.readMode,
 
       sentences: [],        // 句子
       sentenceIndex: -1,    // 句子索引
@@ -286,7 +286,7 @@ export default {
         if (this.isIndent(index)) {
           len += 2 // 缩进格
         }
-        return len * this.fh
+        return len * this.fh - 1
       }
     },
     indicatorHeight () {  // 朗读指示器高度
@@ -302,7 +302,7 @@ export default {
             len = this.info.i
           }
         }
-        return len * this.fh
+        return len * this.fh + 2
       }
     },
     currentSentence: function () {
@@ -318,40 +318,11 @@ export default {
     }
   },
   mounted () {
+    this.$bus.on('resetRecord', this.resetRecord)
     this.$bus.on('playNextRecord', this.playNextRecord)
     this.$bus.on('recitePieceDone', this.recitePieceDone)
-    this.cw = document.documentElement.clientWidth;
-    this.ch = document.documentElement.clientHeight;
-    this.maxRow = Math.floor((this.ch * 0.9 - 50) / this.fh)
-    if (this.readMode) {
-      this.maxColumn = Math.floor((this.cw - 250) / this.fw)
-    } else {
-      this.maxColumn = Math.floor((this.cw - 900) / this.fw)
-    }
     window.onresize = () => {
-      this.cw = document.documentElement.clientWidth;
-      this.ch = document.documentElement.clientHeight;
-      if (this.readMode) {
-        this.maxColumn = Math.floor((this.cw - 250) / this.fw)
-        this.maxRow = Math.floor((this.ch * 0.9 - 50) / this.fh)
-        if (this.maxColumn < 8) {
-          this.maxColumn = 8
-        }
-        if (this.maxRow < 8) {
-          this.maxRow = 8
-        }
-      } else {
-        this.maxColumn = Math.floor((this.cw - 900) / this.fw)
-        this.maxRow = Math.floor((this.ch * 0.9 - 50) / this.fh)
-        if (this.maxColumn < 3) {
-          this.maxColumn = 3
-        }
-        if (this.maxRow < 8) {
-          this.maxRow = 8
-        }
-      }
-      this.pageIndex = 0          // 防止拉伸变化后pageIndex溢出
-      this.showContent()
+      this.reloadPage(false)
     }
     if (this.isBook) {
       getBookContent({'book': this.id}).then(res => {
@@ -365,14 +336,16 @@ export default {
             return Math.floor(item.col / this.maxColumn) + '-' + (item.col % this.maxColumn)
           })
         }
-        this.showContent()
+        this.reloadPage(true)
       })
     } else {
       getPiece({'id': this.id}).then(res => {
         this.piece = res
         this.srcContent = this.piece.content
+        this.sentences = this.$util.splitToSentences(this.srcContent)
         // 加入题序
         if (this.piece.desc != '') {
+          this.sentences = this.$util.splitToSentences(this.piece.desc + this.srcContent)
           this.srcContent = this.fillDesc(this.piece.desc) + '\n' + this.srcContent
         }
         // 加入相关内容
@@ -386,8 +359,7 @@ export default {
           this.markList = this.piece.marks
         }
         this.contents[0] = this.srcContent
-        this.sentences = this.$util.splitToSentences(this.srcContent)
-        this.showContent()
+        this.reloadPage(true)
         this.loadMarks()
         if (this.piece.records) {
           this.recordList = this.piece.records
@@ -479,6 +451,37 @@ export default {
       this.pages = content
       this.loading = false
     },
+    reloadPage (flag) {
+      this.cw = document.documentElement.clientWidth;
+      this.ch = document.documentElement.clientHeight;
+      var offset = 160 + 48 * 2
+      if (!this.isReadMode) {
+        offset += 1000
+      }
+      const mc = Math.max(Math.floor((this.cw - offset) / this.fw), 3)
+      this.maxRow = Math.max(Math.floor((this.ch * 0.9 - 50) / this.fh), 8)
+      if (flag) {
+        const i = 30
+        var timeout = 100
+        if (!this.isReadMode) {
+          timeout += (this.maxColumn - mc) * i
+        }
+        setTimeout(() => {
+          this.$bus.emit('setReadMode', this.isReadMode)
+        }, timeout)
+        var interval = setInterval(() => {
+          if (mc != this.maxColumn) {
+            this.maxColumn += (mc > this.maxColumn ? 1 : -1)
+          } else {
+            this.showContent()
+            clearInterval(interval)
+          }
+        }, i)
+      } else {
+        this.maxColumn = mc
+      }
+      this.pageIndex = 0          // 防止拉伸变化后pageIndex溢出
+    },
     indexBookmark: function (pi, ci) {
       return this.bookmarks.indexOf(pi + '-' + ci)
     },
@@ -512,13 +515,14 @@ export default {
         this.showPiece = false
       }, 1000)
     },
-    expandPage () {
-      this.$bus.emit('changeMode')
+    changeMode () {
+      this.isReadMode = !this.isReadMode
+      this.reloadPage(true)
     },
     startRecord () {
       if (this.recordList.length > 0) {
         if (!this.showRecordPlayer) {
-          this.$bus.emit('setAudioList', this.recordList)
+          this.$bus.emit('setAudioList', this.recordList, this.id)
           this.isPlaying = true
           this.showRecordPlayer = true
         } else {
@@ -532,7 +536,7 @@ export default {
       this.$bus.emit('controlAudio')
     },
     playNextRecord () {
-      if (this.sentenceIndex < this.sentences.length - 1) {
+      if (this.sentenceIndex < this.recordList.length - 1) {
         this.sentenceIndex ++                                           // 移至下一句
         const csl = this.currentSentence.replace(/ /g, '').length       // 当前句长度
         const currentColumn = this.pages[this.info.p][this.info.c]      // 当前列文本
@@ -580,20 +584,23 @@ export default {
     },
     understandPiece () {
       if (!this.piece.status.understand) {
+        // 要求撰写翻译方为理解
         if(this.contents[2].trim() == this.$str.no_content) {
           this.$Message.warning(this.$str.understand_tip);
           this.$bus.emit('addPieceRelate', 1, this.id)
         } else {
           updatePieceStatus({'id': this.id, 'type': 0, 'value': true}).then(() => {
             this.piece.status.understand = true
-            this.$Message.success(this.$str.mark_success);
+            this.$Message.success(this.$str.mark + this.$str.success);
           })
         }
       }
     },
     recitePiece () {
-      this.$bus.emit('switchPowerMode', 1, {'id': this.id})
-      this.$Message.success(this.$str.recite_tip);
+      if (!this.piece.status.recite) {
+        this.$bus.emit('switchPowerMode', 1, {'id': this.id})
+        this.$Message.warning(this.$str.recite_tip);
+      }
     },
     recitePieceDone () {
       if (!this.piece.status.recite) {
@@ -604,9 +611,16 @@ export default {
     },
     favoritePiece () {
       if (!this.piece.status.favorite) {
-        updatePieceStatus({'id': this.id, 'type': 2, 'value': true}).then(() => {
-          this.piece.status.favorite = true
-        })
+        // 要求朗诵全文方可收藏
+        if (this.piece.records.length < this.$util.splitToSentences(this.piece.content).length) {
+          this.$Message.warning(this.$str.favorite_tip);
+          this.$bus.emit('actionPiece', 'record', this.id)
+        } else {
+          updatePieceStatus({'id': this.id, 'type': 2, 'value': true}).then(() => {
+            this.piece.status.favorite = true
+            this.$Message.success(this.$str.favorite + this.$str.success);
+          })
+        }
       }
     },
     loadMarks () {
@@ -656,7 +670,7 @@ export default {
       }
       return text.substring(start, end)
     },
-    mark () {
+    addPieceMark () {
       const text = this.getRangeText(this.columnText, this.startMarkIndex, this.endMarkIndex)
       // 获取当前列之前文本中包含标注词数量
       var allText = ''
@@ -682,6 +696,13 @@ export default {
             desc: ''
           }
         })
+      }
+    },
+    startMark () {
+      if (this.showRecordPlayer) {
+        this.$Message.warning(this.$str.stop_play_record_tip)
+      } else {
+        this.markable = !this.markable
       }
     },
     markIn (pi, index, event) {
@@ -732,7 +753,7 @@ export default {
           })
         },
         onOk: () => {
-          this.mark()
+          this.addPieceMark()
         },
         onCancel: () => {
           this.newMark = {
@@ -744,22 +765,29 @@ export default {
       })
     },
     randomView () {
-      this.$bus.emit('randomPiece')
+      if(this.showRecordPlayer) {
+        this.$Message.warning(this.$str.stop_play_record_tip)
+      } else {
+        this.$bus.emit('randomPiece')
+      }
     }
   }
 }
 </script>
 <style lang="less" scoped>
 .piece-page {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  padding: 48px;
+  flex-direction: row-reverse;
   @base-size: 24px;
   @text-size: 18px;
   @line-width: calc(@text-size * 2);
   @line-height: @text-size + 4px;
   @page-border-size: 4px;
-  height: 90%;
   .piece-content {
     position: relative;
-    display: inline-block;
     height: 100%;
     border: @page-border-size @primary-color solid;
     margin: 0px @base-size;
@@ -771,8 +799,8 @@ export default {
       text-align: right;
     }
     .page {
-      position: relative;
-      width: 100%;
+      display: flex;
+      flex-direction: row-reverse;
       height: 100%;
       background-color: @paper-bg;
       .column-indent {
@@ -780,8 +808,8 @@ export default {
         top: @line-height * 2;
       }
       .column {
+        flex: 1;
         position: relative;
-        float: right;
         height: 100%;
         text-align: center;
         border-left: 1px @primary-color solid;
@@ -960,25 +988,35 @@ export default {
       opacity: .5;
       .hover-fade();
     }
+    .piece-page-control {
+      position: absolute;
+      width: 100%;
+      left: 0px;
+      bottom: -20px;
+      z-index: 3;
+    }
   }
   .piece-title-container {
-    display: inline-block;
-    vertical-align: top;
+    position: relative;
+    height: 100%;
+    align-self: flex-start;
+    display: flex;
+    flex-direction: column;
     @title-padding: 16px;
     .v-title {
       width: @v-title-width + @title-padding * 1.5;
       text-align: center;
-      line-height: calc(@text-size * 2);
+      line-height: calc(@text-size * 1.8);
       cursor: pointer;
     }
     .piece-title {
-      display: block;
       background-color: @paper-bg;
       border: 4px @primary-color double;
       font-size: calc(@text-size * 1.2);
       max-height: 40vh;
       overflow: hidden;
       margin-bottom: 8px;
+      padding: 8px 0px;
       color: @text-black;
       &:hover {
         background: @card-bg;
@@ -995,12 +1033,12 @@ export default {
       background-color: @card-bg;
       font-size: @text-size;
       line-height: calc(@text-size * 1.5);
-      margin-bottom: 16px;
+      margin-bottom: 32px;
       .hover-fade();
     }
     .piece-content-title {
       position: absolute;
-      bottom: @title-height;
+      bottom: 0px;
       .content-title {
         margin-top: @title-height / 2;
         width: @v-title-width + @title-padding * 1.5;
@@ -1022,28 +1060,15 @@ export default {
       }
     }
   }
-  .piece-page-control {
-    position: absolute;
-    width: 100%;
-    left: 0px;
-    bottom: -20px;
-    z-index: 3;
-  }
-  .piece-action {
-    .piece-action-btn {
-      display: block;
-      margin-bottom: 16px;
-    }
-  }
   .piece-space {
     position: relative;
-    display: inline-block;
     vertical-align: top;
     height: 100%;
     .page-control {
       position: absolute;
       bottom: 0px;
       .page-number {
+        text-align: center;
         font-size: @font-middle;
         font-weight: bold;
       }
@@ -1059,6 +1084,13 @@ export default {
         display: block;
         .margin-v(12px)
       }
+    }
+  }
+  .piece-action {
+    .piece-action-btn {
+      display: block;
+      position: relative;
+      margin-bottom: 16px;
     }
   }
 }

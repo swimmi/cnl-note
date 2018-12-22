@@ -76,12 +76,13 @@
 .icon-btn {
   background: @paper-bg;
   border: 4px @primary-color double;
-  padding: 4px;
+  padding: 6px;
   cursor: pointer;
   opacity: .5;
   transition: all 1s;
   &:hover {
     opacity: 1;
+    color: @primary-color!important;
     background: @card-bg;
   }
 }
@@ -206,6 +207,7 @@
   -ms-filter: blur(@px);
   filter: blur(@px);
 }
+
 .flash-fade {
   animation: flashFade 5s infinite;
   @keyframes flashFade {
@@ -250,4 +252,20 @@
 @keyframes slideOutLeft {
   from { width: 100% }
   to { width: 0px }
+}
+
+
+.slide-up {
+  animation: slideUp 1s ease-in-out 1;
+  @keyframes slideUp {
+    from {top: 0px;}
+    to {top: -56px;}
+  }
+}
+.slide-down {
+  animation: slideDown 1s ease 1;
+  @keyframes slideDown {
+    from {top: -56px;}
+    to {top: 0px;}
+  }
 }

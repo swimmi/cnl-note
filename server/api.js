@@ -358,10 +358,11 @@ router.post('/util/item/count', function(req, res) {
   })
 })
 
-router.get('/:dir/:name', function(req, res) {
+router.get('/:dir/:id/:name', function(req, res) {
   var dir = req.params.dir
+  var id = req.params.id
   var options = {
-    root: __dirname + `/uploads/${dir}/`,
+    root: __dirname + `/uploads/${dir}/${id}/`,
     dotfiles: 'deny',
     headers: {
         'x-timestamp': Date.now(),
@@ -374,19 +375,19 @@ router.get('/:dir/:name', function(req, res) {
       console.log(err)
     }
   })
-  console.log(__dirname)
 })
-router.post('/upload', function(req, res) {
+router.post('/upload/record', function(req, res) {
   if (Object.keys(req.files).length == 0) {
-    return res.status(400).send('No files were uploaded.')
+    return res.status(400).send('None')
   }
+  const id = req.body.id
   let files = req.files.file
   if (Array.isArray(files)) {
     files.forEach(file => {
-      file.mv(`uploads/records/` + file.name)
+      file.mv(`uploads/records/${id}/` + file.name)
     })
   } else {
-    files.mv(`uploads/records/` + files.name)
+    files.mv(`uploads/records/${id}/` + files.name)
   }
   res.send('File uploaded!')
 })

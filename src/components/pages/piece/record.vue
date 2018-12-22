@@ -2,16 +2,22 @@
   <div ref="record" class="drawer-form">
     <div class="text-row-container">
       <span class="text-row">{{ textRows[cIndex - 1] || '...' }}</span>
-      <span class="text-row current-text">{{ textRows[cIndex] || '...' }}</span>
+      <marquee v-if="textRows[cIndex] >= 16" class="text-row-long current-text" scrollamount="15">{{ textRows[cIndex] || '...' }}</marquee>
+      <span v-else class="text-row current-text">{{ textRows[cIndex] || '...' }}</span>
       <span class="text-row">{{ textRows[cIndex + 1] || '...' }}</span>
     </div>
     <div class="record-container">
       <audio src="" hidden ref="audio" />
       <div class="record-item-container" ref="recordContainer">
-        <div v-for="(item, index) in records" :key="index" class="record-item animated fadeInDown" :class="{'playing-item': index == playIndex}">
-          <span class="record-text" @click="playRecord(item)">{{ (index + 1) + '. ' + item.text }}</span>
+        <div
+          v-for="(item, index) in records"
+          :key="index"
+          class="record-item animated fadeInDown"
+          :class="{'playing-item': index == playIndex}"
+          @click="playRecord(item)">
+          <span class="record-text">{{ (index + 1) + '. ' + item.text }}</span>
           <span class="record-action">
-            <span class="circle-icon-btn" @click="modifyRecord(index)" :title="$str.modify + $str.record"><Icon type="ios-recording" size="24"/></span>
+            <span class="circle-icon-btn" @click.stop="modifyRecord(index)" :title="$str.modify + $str.record"><Icon type="ios-recording" size="24"/></span>
           </span>
         </div>
       </div>
@@ -21,8 +27,9 @@
       <div class="record-bg" :class="{'record-bg-stop': isRecording}"><Icon :type="isRecording ? 'ios-mic-off': 'ios-mic'" size="32" :color="isRecording ? 'red' : 'white'"/></div>
     </div>
     <div v-else class="record-btn">
-      <div v-if="!isPlaying" class="record-bg" @click="playRecords"><Icon type="ios-play" size="32" color="white"/></div>
-      <div v-else class="record-bg" @click="pauseRecords"><Icon type="ios-pause" size="32" color="white"/></div>
+      <div v-if="!isPlaying" class="record-bg" @click="playRecords"><Icon type="ios-headset" size="24" color="white"/></div>
+      <div v-else class="record-bg" @click="pauseRecords"><Icon type="ios-pause" size="24" color="white"/></div>
+      <div class="empty-btn" @click="emptyRecords" :title="$str.empty + $str.record"><Icon type="ios-trash" size="24" color="red"/></div>
     </div>
     <div v-show="isRecording" class="cancel-btn" @click="cancelRecord" :title="$str.cancel + $str.record"><Icon type="ios-close" size="32" color="red"/></div>
   </div>
@@ -49,7 +56,8 @@ export default {
       recorder: null,
       isRecording: false,
       isPlaying: false,
-      recordFile: ''
+      recordFile: '',
+      media: null
     }
   },
   mounted () {
@@ -58,7 +66,10 @@ export default {
         this.title = res.title
         this.author = res.author.name.full
         this.content = res.content
-        this.textRows = this.$util.splitToSentences(res.content)
+        if (res.desc.trim().length > 0) {
+          this.content = res.desc + '' + this.content
+        }
+        this.textRows = this.$util.splitToSentences(this.content)
         this.textRows.unshift(this.title, this.author)
         if (res.records.length > 0) {
           res.records.forEach((item, index) => {
@@ -77,8 +88,13 @@ export default {
     init () {
       const audioContext = new (window.AudioContext || window.webkitAudioContext)()
       this.recorder = new Recorder(audioContext, {})
-      navigator.mediaDevices.getUserMedia({audio: true})
-        .then(stream => this.recorder.init(stream))
+      this.media = navigator.mediaDevices.getUserMedia({audio: true})
+        .then(stream => {
+          this.recorder.init(stream)
+          stream.onended = function() {
+            console.log('Stream ended')
+          }
+        })
         .catch(err => console.log(err))
     },
     handleRecord () {
@@ -100,7 +116,7 @@ export default {
           }
           setTimeout(() => {
             this.$refs.recordContainer.scrollTop = this.$refs.recordContainer.scrollHeight
-          }, 500)
+          }, 100)
         })
       }
     },
@@ -112,7 +128,7 @@ export default {
           window.URL.revokeObjectURL(url)
         }
       } else {
-        const root = this.$util.uploadPath + 'records/'
+        const root = `${this.$util.uploadPath}records/${this.id}/`
         this.$refs.audio.src = root + item.name
       }
       this.$refs.audio.play()
@@ -141,32 +157,42 @@ export default {
       this.isPlaying = false
       this.$refs.audio.pause()
     },
+    emptyRecords () {
+      this.isPlaying = false
+      this.cIndex = 0
+      this.$refs.audio.pause()
+      this.records = []
+    },
     cancelRecord () {
       this.recorder.stop()
       this.isRecording = false
     },
-    
     async submit () {
       const config = {
         headers: {'Content-Type': 'multipart/form-data'}
       }
       var form = new FormData()
+      form.append('id', this.id)
       var recordList = []
       this.records.forEach((item, index) => {
         if (item.hasOwnProperty('file')) {
-          const root = this.$util.uploadPath + 'records/'
-          const name = `${this.id + '_' + index}.wav`
+          const name = `${index}.wav`
           form.append('file', item.file, name)
           recordList.push(name)
         } else {
           recordList.push(item.name)
         }
       })
-      await this.$http.post('/api/upload', form, config)
+      // 上传音频
+      if (recordList.length > 0) {
+        await this.$http.post('/api/upload/record', form, config)
+      }
+      // 提交数据
       uploadPieceRecords({'id': this.id, 'records': recordList}).then(res => {
+        this.$bus.emit('refresh', this.id)
         this.$bus.emit('back')
       })
-      this.$Message.success(this.$str.submit_success);
+      this.$Message.success(this.$str.submit + this.$str.success);
     }
   }
 }
@@ -184,10 +210,10 @@ export default {
     line-height: @title-height;
     text-align: center;
     color: @text-vice;
-    opacity: .7;
-    &:hover {
-      opacity: 1;
-    }
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    .hover-fade();
   }
   .current-text {
     font-size: @title-size;
@@ -247,18 +273,24 @@ export default {
   height: @size;
   bottom: @size;
   z-index: 99;
-  .hover-fade();
   .record-bg {
     .flex-center();
     width: 100%;
     height: 100%;
     background-color: @primary-color;
     border-radius: 50%;
+    .hover-fade();
   }
   .record-bg-stop {
     border: 1px @stamp-color solid;
     background-color: @white-bg;
   }
+}
+.empty-btn {
+  position: relative;
+  text-align: center;
+  top: 12px;
+  .hover-fade();
 }
 .cancel-btn {
   .center-horizontal();

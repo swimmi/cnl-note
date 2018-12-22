@@ -169,6 +169,7 @@ export default {
     width: 100%;
     height: 100%;
     background-color: @mask-bg;
+    z-index: 98;
   }
   .power-input {
     .v-power-text();

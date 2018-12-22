@@ -1,5 +1,5 @@
 <template>
-  <div class="list-view">
+  <div class="list-view animated slideInLeft">
     <div class="list-header">
       <div class="list-title" @click="scrollToTop"><span>{{ data.title }}</span></div>
       <div class="list-tabs">

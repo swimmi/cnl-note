@@ -110,7 +110,7 @@ export default {
         this.author.name.full = this.author.name.xing + this.author.name.ming
       }
       addAuthor({author: this.author}).then(res => {
-        this.$Message.success(this.$str.submit_success)
+        this.$Message.success(this.$str.submit + this.$str.success)
         this.$bus.emit('back')
       })
     }

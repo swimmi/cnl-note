@@ -60,6 +60,7 @@ var simple = {
   appreciate: '赏析',
   submit: '提交',
   remove: '移除',
+  empty: '清空',
   lock: '锁定',
   unlock: '解锁',
   change: '更换',
@@ -85,6 +86,9 @@ var simple = {
   // 提示
   no: '不',
   yes: '是',
+  success: '成功',
+  fail: '失败',
+  error: '错误',
   unknown: '不详',
   loading_tip: '加载中···',
   wait_tip: '请稍候',
@@ -92,7 +96,6 @@ var simple = {
   select_tip: '请选择',
   need_input: '输入不能为空',
   need_select: '选择不能为空',
-  submit_success: '提交成功！',
   locked: '已锁定',
   no_content: '暂无此内容，请前往添加。',
   recent: '最近',
@@ -104,8 +107,10 @@ var simple = {
   recite_tip: '请先默写全文',
   search_tip: '请输入搜索内容',
   understand_tip: '请先提交翻译',
+  favorite_tip: '请先提交朗诵',
   mark_desc_tip: '请输入标注内容',
-  mark_success: '标注成功'
+  records_play_over_tip: '朗诵播放结束',
+  stop_play_record_tip: '请先停止播放朗诵'
 }
 var traditional = {
 }

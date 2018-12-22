@@ -281,7 +281,7 @@ export default {
     },
     submit () {
       updateCatalog({'book': this.book, 'catalog': this.catalog}).then(res => {
-        this.$Message.success(this.$str.submit_success)
+        this.$Message.success(this.$str.submit + this.$str.success)
       })
     }
   }
